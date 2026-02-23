@@ -1,0 +1,54 @@
+<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&amp;family=DM+Sans:wght@300&amp;display=swap');
+      .logo-name { 
+        font-family: 'Cormorant Garamond', serif; 
+        font-weight: 600; 
+        font-size: 38px; 
+        fill: #FFFFFF; 
+      }
+      .logo-sub { 
+        font-family: 'DM Sans', sans-serif; 
+        font-weight: 300; 
+        font-size: 11px; 
+        letter-spacing: 0.35em; 
+        fill: #4A6BDF; 
+        text-transform: uppercase; 
+      }
+    </style>
+    
+    <linearGradient id="crownGrad" x1="4" y1="2" x2="44" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b7dff" />
+      <stop offset="100%" stop-color="#1a56db" />
+    </linearGradient>
+    <linearGradient id="rootGrad" x1="24" y1="26" x2="24" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b7dff" />
+      <stop offset="100%" stop-color="#1a56db" stop-opacity="0.4" />
+    </linearGradient>
+    <linearGradient id="dividerGrad" x1="0" y1="0" x2="0" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2a3560" stop-opacity="0" />
+      <stop offset="50%" stop-color="#2a3560" />
+      <stop offset="100%" stop-color="#2a3560" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <rect width="400" height="120" rx="24" fill="#0d1220"/>
+
+  <g transform="translate(40, 31)">
+    <g transform="translate(0, 0)">
+      <path d="M8 6C8 6 6 2 12 2C15 2 16.5 4 18 4C19.5 4 20 3 22 3C24 3 24 4 24 4C24 4 24 3 26 3C28 3 28.5 4 30 4C31.5 4 33 2 36 2C42 2 40 6 40 6C40 6 44 10 44 16C44 22 40 26 38 26C36 26 34 24 32 24C30 24 28 26 24 26C20 26 18 24 16 24C14 24 12 26 10 26C8 26 4 22 4 16C4 10 8 6 8 6Z" fill="url(#crownGrad)" />
+      <path d="M16 26C16 26 14 30 13 36C12 42 14 50 16 54C17 56 18 56 18.5 54C19 52 19 46 20 42C21 46 21 52 21.5 54C22 56 23 57 24 54C24 51 24 42 24 42" stroke="url(#rootGrad)" stroke-width="2" stroke-linecap="round" fill="none" />
+      <path d="M32 26C32 26 34 30 35 36C36 42 34 50 32 54C31 56 30 56 29.5 54C29 52 29 46 28 42C27 46 27 52 26.5 54C26 56 25 57 24 54C24 51 24 42 24 42" stroke="url(#rootGrad)" stroke-width="2" stroke-linecap="round" fill="none" />
+      <path d="M24 26L24 42" stroke="url(#rootGrad)" stroke-width="2.5" stroke-linecap="round" fill="none" />
+      <path d="M13 10C13 10 15 8 19 8" stroke="white" stroke-opacity="0.4" stroke-width="1.5" stroke-linecap="round" />
+    </g>
+
+    <rect x="66" y="9" width="1" height="40" fill="url(#dividerGrad)" />
+
+    <g transform="translate(85, 26)">
+      <text x="0" y="10" class="logo-name">Roots Clinic</text>
+      <text x="0" y="28" class="logo-sub">DENTAL MANAGEMENT</text>
+    </g>
+  </g>
+</svg>
