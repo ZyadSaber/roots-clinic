@@ -21,9 +21,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SmartDine POS",
-  description: "Modern Restaurant Management System",
+  title: "Roots Clinic",
+  description: "Modern Clinic Management System",
 };
+
+import { Header } from "@/components/Header";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function RootLayout({
   children,
@@ -33,9 +38,11 @@ export default async function RootLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes(locale as any)) {
+  if (!routing.locales.includes(locale as "ar" | "en")) {
     notFound();
   }
 
@@ -45,7 +52,7 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={direction} suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans min-h-screen bg-background`}
       >
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider
@@ -56,7 +63,15 @@ export default async function RootLayout({
           >
             <StoreProvider>
               <TooltipProvider>
-                {children}
+                <SidebarProvider>
+                  {user && <AppSidebar />}
+                  <SidebarInset className="flex flex-col">
+                    {user && <Header />}
+                    <main className="flex-1 overflow-auto bg-accent/20">
+                      {children}
+                    </main>
+                  </SidebarInset>
+                </SidebarProvider>
                 <Toaster />
               </TooltipProvider>
             </StoreProvider>

@@ -1,26 +1,24 @@
 "use client"
 
-// import { useTransition } from "react"
 import { useTranslations } from "next-intl"
+import { useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Lock, ArrowLeft } from "lucide-react"
-import { Link, useRouter } from "@/i18n/routing"
-import { motion } from "framer-motion"
+import { Lock } from "lucide-react"
 import Logo from "@/components/logo"
-
-// import { login } from "@/services/user"
-import { toast } from "sonner"
 import { useFormManager } from "@/hooks"
-// import { loginSchema } from "@/validations/login"
+import { supabase } from "@/lib/supabase"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { loginWithUsername } from "@/services/login"
 
 export default function LoginPage() {
   const t = useTranslations("Auth")
   const commonT = useTranslations("Common")
   const router = useRouter()
-  // const [isPending, startTransition] = useTransition()
-  const isPending = false
+  const [isPending, startTransition] = useTransition()
 
   const { formData, handleChange, validate, errors } = useFormManager({
     initialData: {
@@ -30,25 +28,25 @@ export default function LoginPage() {
     // schema: loginSchema,
   })
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!validate()) return
-    // startTransition(async () => {
-    //   try {
-    //     const result = await login(formData)
-    //     if (result.success) {
-    //       toast.success(commonT("success"))
-    //       const target = "/management"
-    //       router.push(target)
-    //     } else {
-    //       toast.error(result.error)
-    //     }
-    //   } catch (error: unknown) {
-    //     const message = error instanceof Error ? error.message : "Login failed"
-    //     toast.error(`${commonT("error")}: ${message}`)
-    //   }
-    // })
-  }
 
+    startTransition(async () => {
+      try {
+        const { data, error } = await loginWithUsername(formData.username, formData.password)
+
+        if (error) {
+          toast.error(error.message)
+        } else if (data.user) {
+          toast.success(commonT("success"))
+          router.push("/welcome")
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Login failed"
+        toast.error(`${commonT("error")}: ${message}`)
+      }
+    })
+  }
 
   return (
     <div className="min-h-screen bg-accent/20 flex flex-col items-center justify-center p-4">
@@ -56,13 +54,13 @@ export default function LoginPage() {
         <CardHeader className="text-center pt-10">
           <Logo className="w-full h-24 mx-auto mb-6 rounded-3xl" />
           <CardTitle className="text-3xl font-black tracking-tight">{t("login")}</CardTitle>
-          <CardDescription>Access the SmartDine Management Suite</CardDescription>
+          <CardDescription>Access the Roots Clinic Management Suite</CardDescription>
         </CardHeader>
         <CardContent className="p-8 flex flex-col gap-5">
           <Input
             name="username"
-            type="text"
-            placeholder="admin"
+            type="email"
+            placeholder="admin@example.com"
             value={formData.username}
             onChange={handleChange}
             className="h-12 rounded-xl"

@@ -6,9 +6,9 @@ const Logo = ({ className }: { className?: string }) => {
         <div className={cn("relative overflow-hidden flex items-center justify-center", className)}>
             <Image
                 src="/logo.svg"
-                alt="Smart Dine Logo"
+                alt="Roots Clinic Logo"
                 fill
-                className="object-contain"
+                className="object-contain transition-all duration-300"
                 priority
             />
         </div>
