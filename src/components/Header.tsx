@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "@/i18n/routing"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "./mode-toggle"
 import { LanguageSwitcher } from "./LanguageSwitcher"
-import { LogOut, Calendar, Search, Bell, HelpCircle, User } from "lucide-react"
+import { LogOut, Calendar, Search, Bell, HelpCircle, User, Clock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -20,11 +20,17 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+import { useDispatch, useSelector } from "react-redux"
+import { RootState } from "@/store/store"
+import { setSearchQuery } from "@/store/slices/uiSharedSlice"
+
 export function Header() {
     const t = useTranslations("Common")
     const locale = useLocale()
     const router = useRouter()
     const pathname = usePathname()
+    const dispatch = useDispatch()
+    const searchQuery = useSelector((state: RootState) => state.uiShared.searchQuery)
     const [time, setTime] = useState<Date | null>(null)
     const supabase = createClient()
 
@@ -67,10 +73,12 @@ export function Header() {
                 {/* Search Bar - Center Aligned in flex-1 */}
                 <div className="hidden md:flex flex-1 justify-center max-w-xl mx-auto px-8">
                     <div className="relative w-full group">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 transition-colors group-focus-within:text-primary" />
+                        <Search className="absolute inset-s-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 transition-colors group-focus-within:text-primary" />
                         <Input
                             placeholder="Search patients, records or inventory..."
-                            className="w-full bg-accent/30 border-none rounded-2xl pl-10 h-10 text-sm focus-visible:ring-1 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground/60"
+                            value={searchQuery}
+                            onChange={(e) => dispatch(setSearchQuery(e.target.value))}
+                            className="w-full bg-accent/30 border-none rounded-2xl ps-10 h-10 text-sm focus-visible:ring-1 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground/60"
                         />
                     </div>
                 </div>
@@ -79,18 +87,27 @@ export function Header() {
             <div className="flex items-center gap-2 md:gap-4">
                 {/* Desktop Elements */}
                 <div className="hidden lg:flex items-center gap-4 text-sm font-bold text-muted-foreground/60">
-                    <div className="flex items-center gap-2 bg-accent/30 px-3 py-1.5 rounded-xl border border-border/20">
-                        <Calendar className="w-4 h-4 text-primary" />
-                        <span className="whitespace-nowrap tabular-nums">
-                            {time?.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </span>
+                    <div className="flex items-center gap-4 bg-accent/30 px-4 py-1.5 rounded-xl border border-border/20">
+                        <div className="flex items-center gap-2 text-foreground/80">
+                            <Calendar className="w-4 h-4 text-primary" />
+                            <span className="whitespace-nowrap tabular-nums">
+                                {time?.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                        </div>
+                        <div className="w-px h-4 bg-border/60" />
+                        <div className="flex items-center gap-2 text-foreground/80">
+                            <Clock className="w-4 h-4 text-primary" />
+                            <span className="whitespace-nowrap tabular-nums uppercase">
+                                {time?.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                     <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors relative">
                         <Bell className="w-5 h-5" />
-                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-primary rounded-full border-2 border-background" />
+                        <span className="absolute top-2.5 inset-e-2.5 w-2 h-2 bg-primary rounded-full border-2 border-background" />
                     </Button>
                     <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors">
                         <HelpCircle className="w-5 h-5" />

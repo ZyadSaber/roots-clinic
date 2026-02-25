@@ -43,7 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname()
 
     return (
-        <Sidebar variant="sidebar" collapsible="icon" className="border-r border-border/50" {...props}>
+        <Sidebar variant="sidebar" collapsible="icon" {...props}>
             <SidebarHeader className="h-24 flex items-center justify-center px-4 mt-6">
                 <Link href="/welcome" className="flex flex-col items-center w-full transition-opacity hover:opacity-80">
                     <Logo className="h-12 w-full max-w-[160px] group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
@@ -89,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <span className="text-sm font-bold truncate">Dr. Sarah Miller</span>
                         <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider truncate">System Admin</span>
                     </div>
-                    <button className="ml-auto p-1 text-muted-foreground hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden">
+                    <button className="ms-auto p-1 text-muted-foreground hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden">
                         <Settings className="w-4 h-4" />
                     </button>
                 </div>

@@ -53,6 +53,7 @@ export async function updateSession(request: NextRequest) {
   // Note: we need to account for the locale prefix
   const isWelcomePage = url.pathname.includes("/welcome");
   const isManagementPage = url.pathname.includes("/management");
+  const isDoctorsPage = url.pathname.includes("/doctors");
   const isLoginPage =
     url.pathname === "/" ||
     routing.locales.some((loc) => url.pathname === `/${loc}`);
@@ -64,7 +65,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (!user && (isWelcomePage || isManagementPage)) {
+  if (!user && (isWelcomePage || isManagementPage || isDoctorsPage)) {
     // Redirect to login if trying to access protected pages while logged out
     const locale = url.pathname.split("/")[1] || "en";
     url.pathname = `/${locale}`;

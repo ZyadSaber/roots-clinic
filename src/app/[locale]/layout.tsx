@@ -63,8 +63,8 @@ export default async function RootLayout({
           >
             <StoreProvider>
               <TooltipProvider>
-                <SidebarProvider>
-                  {user && <AppSidebar />}
+                <SidebarProvider side={locale === 'ar' ? 'right' : 'left'}>
+                  {user && <AppSidebar side={locale === 'ar' ? 'right' : 'left'} />}
                   <SidebarInset className="flex flex-col">
                     {user && <Header />}
                     <main className="flex-1 overflow-auto bg-accent/20">
