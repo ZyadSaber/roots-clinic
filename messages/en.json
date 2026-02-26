@@ -59,7 +59,12 @@
     "applicationError": {
       "title": "Something went wrong!",
       "description": "We've encountered an unexpected error. Please try again or return home.",
-      "retry": "Try Again"
+      "retry": "Try Again",
+      "505": {
+        "title": "505 - Server Error",
+        "description": "Oops! We've encountered an unexpected error on the server.",
+        "backToHome": "Return to Homepage"
+      }
     },
     "goHome": "Go Back Home",
     "errorDetails": "Error Details",
@@ -80,7 +85,7 @@
     "unavailable": "Unavailable",
     "editFees": "Edit Fees",
     "available": "Available",
-    "onBreak": "On Break",
+    "on_break": "On Break",
     "away": "Away",
     "form": {
       "registerTitle": "Register Doctor",

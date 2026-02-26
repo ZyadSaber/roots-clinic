@@ -1,14 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+export interface AuthUser {
+  id: string;
+  username: string;
+  full_name: string;
+  role: "admin" | "doctor" | "receptionist" | "finance" | "super_admin" | "";
+  email?: string;
+  avatar_url?: string;
+}
+
 interface AuthState {
-  user: {
-    id: string;
-    username: string;
-    full_name: string;
-    role: "admin" | "doctor" | "receptionist" | "finance";
-    email?: string;
-    avatar_url?: string;
-  } | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   loading: boolean;
 }

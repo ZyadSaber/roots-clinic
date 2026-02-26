@@ -2,20 +2,20 @@
 
 import { queryOne } from "@/lib/pg";
 
-export async function getStaffByEmail(email: string) {
+export async function getStaffById(id: string) {
   try {
     const sql = `
             SELECT 
-                s.id,
-                s.full_name,
-                s.username,
-                s.avatar_url,
-                s.role
-            FROM staff s
-            WHERE s.email = $1 AND s.is_active = TRUE
+                full_name,
+                username,
+                avatar_url,
+                role,
+                email
+            FROM staff_with_email
+            WHERE id = $1 AND is_active = TRUE
             LIMIT 1
         `;
-    return await queryOne({ sql, params: [email] });
+    return await queryOne({ sql, params: [id] });
   } catch (error) {
     console.error("Error fetching staff:", error);
     return null;

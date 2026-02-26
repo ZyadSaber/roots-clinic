@@ -1,19 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import uiSharedReducer from "./slices/uiSharedSlice";
 import authReducer from "./slices/authSlice";
-import patientReducer from "./slices/patientSlice";
-import appointmentReducer from "./slices/appointmentSlice";
-import inventoryReducer from "./slices/inventorySlice";
-import financeReducer from "./slices/financeSlice";
+import doctorsReducer from "./slices/doctorsSlice";
 
 export const store = configureStore({
   reducer: {
     uiShared: uiSharedReducer,
     auth: authReducer,
-    patients: patientReducer,
-    appointments: appointmentReducer,
-    inventory: inventoryReducer,
-    finance: financeReducer,
+    doctors: doctorsReducer,
   },
 });
 

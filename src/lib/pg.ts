@@ -28,7 +28,12 @@ export async function queryOne({ sql, params }: QueryParams) {
 }
 
 export async function queryMany({ sql, params }: QueryParams) {
-  return await query({ sql, params });
+  try {
+    return await query({ sql, params });
+  } catch (err) {
+    console.error("queryMany error:", err);
+    return [];
+  }
 }
 
 export async function execute({ sql, params }: QueryParams) {

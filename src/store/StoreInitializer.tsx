@@ -3,9 +3,9 @@
 import { useEffect } from "react"
 import { useDispatch } from "react-redux"
 import { createClient } from "@/lib/supabase/client"
-import { setCredentials } from "@/store/slices/authSlice"
+import { setCredentials, AuthUser } from "@/store/slices/authSlice"
 import { User as SupabaseUser } from "@supabase/supabase-js"
-import { getStaffByEmail } from "@/services/staff"
+import { getStaffById } from "@/services/staff"
 
 export default function StoreInitializer({
     initialUser
@@ -23,24 +23,24 @@ export default function StoreInitializer({
             }
 
             // Start with Supabase data
-            let staffData = {
+            let staffData: AuthUser = {
                 id: user.id,
+                username: "",
+                full_name: "",
+                role: "",
                 email: user.email || "",
-                username: user.email?.split('@')[0] || "",
-                full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "User",
-                role: (user.user_metadata?.role as "admin" | "doctor" | "receptionist" | "finance") || "receptionist",
-                avatar_url: user.user_metadata?.avatar_url
+                avatar_url: ""
             }
 
             // Try to enhance with real database data from staff table
             try {
-                const dbStaff = await getStaffByEmail(user.email || "")
+                const dbStaff = await getStaffById(user.id || "")
                 if (dbStaff) {
                     staffData = {
                         ...staffData,
                         full_name: dbStaff.full_name,
                         username: dbStaff.username,
-                        avatar_url: dbStaff.avatar_url || staffData.avatar_url,
+                        avatar_url: dbStaff.avatar_url,
                         role: dbStaff.role
                     }
                 }

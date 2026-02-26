@@ -44,7 +44,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const t = useTranslations("Common")
     const pathname = usePathname()
     const { user, loading } = useSelector((state: RootState) => state.auth)
-    const { lowStockCount } = useSelector((state: RootState) => state.inventory)
 
     return (
         <Sidebar variant="sidebar" collapsible="icon" {...props}>
@@ -76,11 +75,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                         <Link href={item.href} className="relative">
                                             <Icon className="w-6 h-6" />
                                             <span className="font-semibold">{t(item.labelKey)}</span>
-                                            {isInventory && lowStockCount > 0 && (
+                                            {/* {isInventory && lowStockCount > 0 && (
                                                 <span className="absolute inset-e-4 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-background group-data-[collapsible=icon]:-top-1 group-data-[collapsible=icon]:inset-e-1 group-data-[collapsible=icon]:translate-y-0">
                                                     {lowStockCount}
                                                 </span>
-                                            )}
+                                            )} */}
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
