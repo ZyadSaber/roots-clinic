@@ -18,13 +18,16 @@ import useVisibility from "@/hooks/useVisibility";
 import { motion, AnimatePresence } from "framer-motion";
 import { DoctorForm, DoctorFormData } from "@/components/doctors/DoctorForm";
 import { toast } from "sonner";
+import { Specialty } from "@/types/database";
 
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 
 interface Doctor {
+    id: string;
     name: string;
-    specialty: string;
+    specialty_en: string;
+    specialty_ar: string;
     fee: number;
     status: string;
     image: string;
@@ -36,13 +39,13 @@ interface Doctor {
 
 interface DoctorsClientProps {
     doctors: Doctor[];
-    specializations: string[];
+    specializations: Specialty[];
 }
 
 export default function DoctorsClient({ doctors, specializations }: DoctorsClientProps) {
     const { visible, handleOpen, handleClose } = useVisibility();
     const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
-    const [selectedSpec, setSelectedSpec] = useState("All Specializations");
+    const [selectedSpec, setSelectedSpec] = useState<string | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [formMode, setFormMode] = useState<"add" | "edit">("add");
     const searchQuery = useSelector((state: RootState) => state.uiShared.searchQuery);
@@ -74,11 +77,22 @@ export default function DoctorsClient({ doctors, specializations }: DoctorsClien
     };
 
     const filteredDoctors = doctors.filter(doc => {
-        const matchesSpec = selectedSpec === "All Specializations" || doc.specialty.includes(selectedSpec);
+        const matchesSpec = !selectedSpec ||
+            doc.specialty_en === selectedSpec ||
+            doc.specialty_ar === selectedSpec;
         const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            doc.specialty.toLowerCase().includes(searchQuery.toLowerCase());
+            doc.specialty_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            doc.specialty_ar.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesSpec && matchesSearch;
     });
+
+    const getDoctorSpecialty = (doc: Doctor) => {
+        return locale === 'ar' ? doc.specialty_ar : doc.specialty_en;
+    };
+
+    const getSpecialtyName = (spec: Specialty) => {
+        return locale === 'ar' ? spec.arabic_name : spec.english_name;
+    };
 
     return (
         <div className="flex h-[calc(100vh-4rem)] overflow-hidden relative">
@@ -100,16 +114,27 @@ export default function DoctorsClient({ doctors, specializations }: DoctorsClien
 
                     {/* Filter Pills */}
                     <div className="flex gap-2 mb-8 overflow-x-auto pb-4 scrollbar-hide">
-                        {specializations.map((spec) => (
-                            <Button
-                                key={spec}
-                                onClick={() => setSelectedSpec(spec)}
-                                variant={selectedSpec === spec ? "default" : "outline"}
-                                className={`rounded-full h-10 px-6 font-bold whitespace-nowrap transition-all ${selectedSpec !== spec ? 'bg-background hover:bg-accent border-border/50' : ''}`}
-                            >
-                                {spec === "All Specializations" ? t("allSpecializations") : t(`specializations.${spec.toLowerCase().replace(/\s+/g, '')}`)}
-                            </Button>
-                        ))}
+                        <Button
+                            onClick={() => setSelectedSpec(null)}
+                            variant={!selectedSpec ? "default" : "outline"}
+                            className={`rounded-full h-10 px-6 font-bold whitespace-nowrap transition-all ${selectedSpec ? 'bg-background hover:bg-accent border-border/50' : ''}`}
+                        >
+                            {t("allSpecializations")}
+                        </Button>
+                        {specializations.map((spec) => {
+                            const name = getSpecialtyName(spec);
+                            const isActive = selectedSpec === spec.english_name || selectedSpec === spec.arabic_name;
+                            return (
+                                <Button
+                                    key={spec.id}
+                                    onClick={() => setSelectedSpec(locale === 'ar' ? spec.arabic_name : spec.english_name)}
+                                    variant={isActive ? "default" : "outline"}
+                                    className={`rounded-full h-10 px-6 font-bold whitespace-nowrap transition-all ${!isActive ? 'bg-background hover:bg-accent border-border/50' : ''}`}
+                                >
+                                    {name}
+                                </Button>
+                            );
+                        })}
                     </div>
 
                     {/* Doctor Cards Grid */}
@@ -135,7 +160,7 @@ export default function DoctorsClient({ doctors, specializations }: DoctorsClien
                                     </div>
                                     <CardTitle className="text-lg font-black">{doc.name}</CardTitle>
                                     <p className={`text-sm font-bold ${selectedDoctor?.name === doc.name ? 'text-primary' : 'text-muted-foreground'}`}>
-                                        {t(`specializations.${doc.specialty.toLowerCase().replace(/\s+/g, '')}`)}
+                                        {getDoctorSpecialty(doc)}
                                     </p>
                                 </CardHeader>
                                 <CardContent className="p-6 pt-0">
@@ -193,7 +218,7 @@ export default function DoctorsClient({ doctors, specializations }: DoctorsClien
                                     </Avatar>
                                     <div>
                                         <h2 className="text-2xl font-black tracking-tight">{selectedDoctor.name}</h2>
-                                        <p className="text-primary font-bold">{t(`specializations.${selectedDoctor.specialty.toLowerCase().replace(/\s+/g, '')}`)}</p>
+                                        <p className="text-primary font-bold">{getDoctorSpecialty(selectedDoctor)}</p>
                                         <div className="flex items-center gap-1 mt-2">
                                             <Stars rating={selectedDoctor.rating} />
                                             <span className="text-xs font-bold text-muted-foreground ms-2">{selectedDoctor.rating} ({selectedDoctor.reviews} {t("reviews")})</span>
@@ -273,12 +298,13 @@ export default function DoctorsClient({ doctors, specializations }: DoctorsClien
                 mode={formMode}
                 initialData={formMode === "edit" ? {
                     name: selectedDoctor?.name,
-                    specialty: selectedDoctor?.specialty,
+                    specialty: selectedDoctor?.specialty_en,
                     fee: selectedDoctor?.fee,
                     status: selectedDoctor?.status,
                     image: selectedDoctor?.image,
                     exp: selectedDoctor?.exp
                 } : undefined}
+                specializations={specializations}
             />
         </div>
     );

@@ -32,9 +32,9 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog"
 import useFormManager from "@/hooks/useFormManager"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
+import { Specialty } from "@/types/database"
 import {
     Tabs,
     TabsContent,
@@ -67,9 +67,11 @@ interface DoctorFormProps {
     onSubmit: (data: DoctorFormData) => void
     initialData?: Partial<DoctorFormData>
     mode: "add" | "edit"
+    specializations: Specialty[]
 }
 
-export function DoctorForm({ isOpen, onClose, onSubmit, initialData, mode }: DoctorFormProps) {
+export function DoctorForm({ isOpen, onClose, onSubmit, initialData, mode, specializations }: DoctorFormProps) {
+    const locale = useLocale()
     const defaultSchedule = [
         "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"
     ].map(day => ({ day, startTime: "09:00", endTime: "17:00", active: true }))
@@ -144,15 +146,6 @@ export function DoctorForm({ isOpen, onClose, onSubmit, initialData, mode }: Doc
         }
     }
 
-    const specializations = [
-        "generaldentistry",
-        "orthodontics",
-        "radiology",
-        "periodontics",
-        "oralsurgery",
-        "endodontics",
-        "pediatricdentistry"
-    ]
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -249,8 +242,12 @@ export function DoctorForm({ isOpen, onClose, onSubmit, initialData, mode }: Doc
                                             </SelectTrigger>
                                             <SelectContent className="rounded-2xl border-border/50 shadow-2xl">
                                                 {specializations.map(spec => (
-                                                    <SelectItem key={spec} value={spec} className="rounded-xl focus:bg-primary/10">
-                                                        {t(`specializations.${spec.toLowerCase().replace(/\s+/g, '')}`)}
+                                                    <SelectItem
+                                                        key={spec.id}
+                                                        value={spec.english_name}
+                                                        className="rounded-xl focus:bg-primary/10"
+                                                    >
+                                                        {locale === 'ar' ? spec.arabic_name : spec.english_name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>

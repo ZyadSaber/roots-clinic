@@ -61,6 +61,8 @@ export function Header() {
         return t(lastPart.toLowerCase()) || lastPart.charAt(0).toUpperCase() + lastPart.slice(1)
     }
 
+    const { activeNotifications } = useSelector((state: RootState) => state.uiShared)
+
     return (
         <header className="h-16 flex items-center justify-between px-6 bg-background border-b border-border/50 sticky top-0 z-40 backdrop-blur-md supports-backdrop-filter:bg-background/80">
             <div className="flex items-center gap-4 flex-1">
@@ -107,7 +109,11 @@ export function Header() {
                 <div className="flex items-center gap-1.5">
                     <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors relative">
                         <Bell className="w-5 h-5" />
-                        <span className="absolute top-2.5 inset-e-2.5 w-2 h-2 bg-primary rounded-full border-2 border-background" />
+                        {activeNotifications > 0 && (
+                            <span className="absolute top-2.5 inset-e-2.5 w-4 h-4 bg-primary text-[10px] font-black text-white rounded-full border-2 border-background flex items-center justify-center">
+                                {activeNotifications}
+                            </span>
+                        )}
                     </Button>
                     <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors">
                         <HelpCircle className="w-5 h-5" />

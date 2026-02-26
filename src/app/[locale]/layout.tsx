@@ -8,6 +8,7 @@ import { routing } from '@/i18n/routing';
 import { notFound } from 'next/navigation';
 import { Toaster } from "@/components/ui/sonner";
 import StoreProvider from '@/store/StoreProvider';
+import StoreInitializer from '@/store/StoreInitializer';
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 const geistSans = Geist({
@@ -62,6 +63,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <StoreProvider>
+              <StoreInitializer initialUser={user} />
               <TooltipProvider>
                 <SidebarProvider side={locale === 'ar' ? 'right' : 'left'}>
                   {user && <AppSidebar side={locale === 'ar' ? 'right' : 'left'} />}
