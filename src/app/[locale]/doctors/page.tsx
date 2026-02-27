@@ -34,10 +34,7 @@ export default function DoctorsPage() {
                 backText={commonT("backToHome")}
                 errorDetails={error || ""}
             />}
-            <DoctorsClient
-                doctors={availableDoctors}
-                specializations={[]}
-            />
+            <DoctorsClient doctors={availableDoctors} />
         </LoadingOverlay>
     );
 }

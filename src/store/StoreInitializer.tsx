@@ -56,8 +56,10 @@ export default function StoreInitializer({
         }
 
         // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            syncStaffData(session?.user || null)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (['INITIAL_SESSION', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
+                syncStaffData(session?.user || null)
+            }
         })
 
         return () => subscription.unsubscribe()

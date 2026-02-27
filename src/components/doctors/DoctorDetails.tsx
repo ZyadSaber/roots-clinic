@@ -14,10 +14,25 @@ import { LoadingOverlay } from "../ui/LoadingOverlay";
 import { getDoctorSchedule } from "@/services/doctors";
 import days from "@/constants/days";
 
+// Returns true if the current day and time falls within this schedule slot
+function isActiveNow(slot: DoctorScheduleRecord): boolean {
+    const now = new Date();
+    const todayDayOfWeek = now.getDay(); // 0 = Sunday … 6 = Saturday
+    if (slot.day_of_week !== todayDayOfWeek) return false;
+
+    // start_time / end_time come as "HH:MM:SS" strings from the DB
+    const toMinutes = (timeStr: string) => {
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return currentMinutes >= toMinutes(slot.start_time) && currentMinutes < toMinutes(slot.end_time);
+}
 
 interface DoctorDetailsProps {
     visible: boolean;
-    selectedDoctor?: DoctorSummary;
+    selectedDoctor: DoctorSummary | null;
     handleClose: () => void;
 }
 
@@ -55,7 +70,7 @@ const DoctorDetails = ({ visible, selectedDoctor, handleClose }: DoctorDetailsPr
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: locale === 'ar' ? "-100%" : "100%", opacity: 0 }}
                         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        className="w-[450px] absolute inset-e-8 top-8 bottom-8 bg-background/80 backdrop-blur-2xl border border-border/50 flex-col overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[3rem] z-20 flex"
+                        className="w-112.5 absolute inset-e-8 top-8 bottom-8 bg-background/80 backdrop-blur-2xl border border-border/50 flex-col overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[3rem] z-20 flex"
                     >
                         <div className="absolute top-6 inset-e-6 z-30">
                             <Button
@@ -78,7 +93,7 @@ const DoctorDetails = ({ visible, selectedDoctor, handleClose }: DoctorDetailsPr
                                 </Avatar>
                                 <div>
                                     <h2 className="text-2xl font-black tracking-tight">{selectedDoctor.name}</h2>
-                                    {/* <p className="text-primary font-bold">{getDoctorSpecialty(selectedDoctor)}</p> */}
+                                    <p className="text-primary font-bold">{getLocalizedValue({ en: selectedDoctor.en, ar: selectedDoctor.ar }, locale)}</p>
                                     <div className="flex items-center gap-1 mt-2">
                                         <Stars rating={selectedDoctor.rating} />
                                         <span className="text-xs font-bold text-muted-foreground ms-2">{selectedDoctor.rating} ({selectedDoctor.review_count} {t("reviews")})</span>
@@ -107,17 +122,17 @@ const DoctorDetails = ({ visible, selectedDoctor, handleClose }: DoctorDetailsPr
                                         doctorSchedule.map((slot, index) => (
                                             <div
                                                 key={index}
-                                                className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${slot.is_active
+                                                className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${isActiveNow(slot)
                                                     ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20'
                                                     : 'bg-accent/20 border-border/40'
                                                     }`}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-2 rounded-full ${slot.is_active ? 'bg-white animate-pulse' : 'bg-green-500'}`} />
+                                                    <div className={`w-2 h-2 rounded-full ${isActiveNow(slot) ? 'bg-white animate-pulse' : 'bg-green-500'}`} />
                                                     <p className="font-bold text-sm">{getLocalizedValue(days[slot.day_of_week] as unknown as LocalizedString, locale)}</p>
                                                 </div>
-                                                <p className={`text-sm font-bold ${slot.is_active ? 'uppercase tracking-wider' : 'text-muted-foreground'}`}>
-                                                    {slot.is_active ? t("activeNow") : slot.start_time + " - " + slot.end_time}
+                                                <p className={`text-sm font-bold ${isActiveNow(slot) ? 'uppercase tracking-wider' : 'text-muted-foreground'}`}>
+                                                    {isActiveNow(slot) ? t("activeNow") : slot.start_time + " - " + slot.end_time}
                                                 </p>
                                             </div>
                                         ))
