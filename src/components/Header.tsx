@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "@/i18n/routing"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "./mode-toggle"
 import { LanguageSwitcher } from "./LanguageSwitcher"
-import { LogOut, Calendar, Search, Bell, HelpCircle, User, Clock } from "lucide-react"
+import { LogOut, Calendar, Search, Bell, HelpCircle, User, Clock, Maximize, Minimize } from "lucide-react"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -32,7 +32,24 @@ export function Header() {
     const dispatch = useDispatch()
     const searchQuery = useSelector((state: RootState) => state.uiShared.searchQuery)
     const [time, setTime] = useState<Date | null>(null)
+    const [isFullScreen, setIsFullScreen] = useState(false)
     const supabase = createClient()
+
+    useEffect(() => {
+        const handleFullScreenChange = () => {
+            setIsFullScreen(!!document.fullscreenElement)
+        }
+        document.addEventListener("fullscreenchange", handleFullScreenChange)
+        return () => document.removeEventListener("fullscreenchange", handleFullScreenChange)
+    }, [])
+
+    const toggleFullScreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen()
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen()
+        }
+    }
 
     useEffect(() => {
         const initialTimer = setTimeout(() => setTime(new Date()), 0)
@@ -114,6 +131,12 @@ export function Header() {
                                 {activeNotifications}
                             </span>
                         )}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors"
+                        onClick={toggleFullScreen}
+                        title={isFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                    >
+                        {isFullScreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                     </Button>
                     <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors">
                         <HelpCircle className="w-5 h-5" />

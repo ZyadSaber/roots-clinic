@@ -1,5 +1,6 @@
 import WelcomeClient from "./WelcomeClient";
 import { createClient } from "@/lib/supabase/server";
+import { getStaffById } from "@/services/staff";
 import { redirect } from "next/navigation";
 
 export default async function ManagementPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -8,16 +9,17 @@ export default async function ManagementPage({ params }: { params: Promise<{ loc
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
+    const { id } = user || {};
+
+    const staffUser = await getStaffById(id || "")
+
+    if (!id) {
         redirect(`/${locale}`);
     }
 
-    // You could also fetch the staff name from your PG database here using queryOne
-    const username = user.user_metadata?.full_name || user.email?.split('@')[0] || "User";
-
     return (
         <WelcomeClient
-            username={username}
+            username={staffUser?.full_name || ""}
         />
     );
 }

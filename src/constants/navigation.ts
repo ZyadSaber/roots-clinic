@@ -14,10 +14,28 @@ export const MANAGEMENT_NAV_ITEMS: NavItemConfig[] = [
     descriptionKey: "patientsDesc",
   },
   {
+    iconName: "calendar",
+    labelKey: "appointments",
+    href: "/appointments",
+    descriptionKey: "appointmentsDesc",
+  },
+  {
+    iconName: "image",
+    labelKey: "radiology",
+    href: "/radiology",
+    descriptionKey: "radiologyDesc",
+  },
+  {
     iconName: "stethoscope",
     labelKey: "doctors",
     href: "/doctors",
     descriptionKey: "doctorsDesc",
+  },
+  {
+    iconName: "userCog",
+    labelKey: "staff",
+    href: "/staff",
+    descriptionKey: "staffDesc",
   },
   {
     iconName: "package",
@@ -26,15 +44,21 @@ export const MANAGEMENT_NAV_ITEMS: NavItemConfig[] = [
     descriptionKey: "inventoryDesc",
   },
   {
-    iconName: "file-digit",
-    labelKey: "radiology",
-    href: "/radiology",
-    descriptionKey: "radiologyDesc",
-  },
-  {
-    iconName: "banknote",
+    iconName: "dollarSign",
     labelKey: "finance",
     href: "/finance",
     descriptionKey: "financeDesc",
+  },
+  {
+    iconName: "fileText",
+    labelKey: "records",
+    href: "/records",
+    descriptionKey: "recordsDesc",
+  },
+  {
+    iconName: "shield",
+    labelKey: "users",
+    href: "/users",
+    descriptionKey: "usersDesc",
   },
 ];

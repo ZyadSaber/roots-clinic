@@ -1,5 +1,10 @@
 {
   "Common": {
+    "records": "التقارير الطبية",
+    "recordsDesc": "",
+    "staff": "الموظفين",
+    "staffDesc": "ادارة الموظفين و صلاحياتهم",
+    "appointments": "المواعيد",
     "title": "سمارت داين POS",
     "home": "الرئيسية",
     "dashboard": "لوحة القيادة",
