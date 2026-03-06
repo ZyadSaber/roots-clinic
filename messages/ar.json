@@ -1,5 +1,8 @@
 {
   "Common": {
+    "enName": "الاسم بالانجليزية",
+    "id": "مسلسل",
+    "arName": "الاسم بالعربية",
     "records": "التقارير الطبية",
     "recordsDesc": "",
     "staff": "الموظفين",
@@ -17,6 +20,7 @@
     "save": "حفظ",
     "cancel": "إلغاء",
     "delete": "حذف",
+    "deleteDesc": " هل أنت متأكد من رغبتك في حذف هذا السجل؟ لا يمكن التراجع عن هذا الإجراء.",
     "edit": "تعديل",
     "add": "إضافة",
     "backToHome": "العودة الى اللقائمة الرئيسية",
@@ -128,7 +132,9 @@
       "pediatricdentistry": "طب أسنان الأطفال",
       "seniororthodontist": "أخصائي تقويم أسنان أول",
       "radiologyspecialist": "أخصائي أشعة",
-      "periodontist": "أخصائي أمراض اللثة"
+      "periodontist": "أخصائي أمراض اللثة",
+      "specialty": "التخصصات",
+      "specialtyDesc": "اضافة و تعديل و حذف التخصصات"
     },
     "days": {
       "Monday": "الاثنين",

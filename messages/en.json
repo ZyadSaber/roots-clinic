@@ -1,5 +1,8 @@
 {
   "Common": {
+    "enName": "English name",
+    "id": "ID",
+    "arName": "Arabic name",
     "records": "Medical Records",
     "recordsDesc": "",
     "staff": "Staff",
@@ -17,6 +20,7 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
+    "deleteDesc": " Are you sure you want to delete this record? This action cannot be undone.",
     "edit": "Edit",
     "add": "Add",
     "backToHome": "Back to Home",
@@ -139,7 +143,9 @@
       "pediatricdentistry": "Pediatric Dentistry",
       "seniororthodontist": "Senior Orthodontist",
       "radiologyspecialist": "Radiology Specialist",
-      "periodontist": "Periodontist"
+      "periodontist": "Periodontist",
+      "specialty": "Specialty",
+      "specialtyDesc": " Add, edit or remove doctor specialties"
     },
     "days": {
       "Monday": "Monday",

@@ -1,5 +1,4 @@
 'use client'
-// import { useTransition } from "react";
 import {
     Dialog,
     DialogContent,
@@ -12,59 +11,53 @@ import {
 import { Trash2 } from "lucide-react";
 import { useVisibility } from "@/hooks"
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner"
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 interface DeleteDialogProps {
-    id: string;
-    deleteAction: (id: string) => Promise<{ error?: string }>;
+    deleteLoading: boolean;
+    deleteAction: () => void;
+    deleteClassName?: string;
+
 }
 
-const DeleteDialog = ({ id, deleteAction }: DeleteDialogProps) => {
+const DeleteDialog = ({ deleteLoading, deleteAction, deleteClassName }: DeleteDialogProps) => {
     const { visible, handleClose, handleStateChange } = useVisibility()
-    // const [isDeleting, startDeleteTransition] = useTransition();
-    const isDeleting = false
+    const t = useTranslations("Common")
 
-    const handleDeleteInvoice = () => {
-        // startDeleteTransition(async () => {
-        // const result = await deleteAction(id);
-        // if (result.error) {
-        //     toast.error(result.error);
-        // } else {
-        //     toast.success("Purchase order deleted");
-        //     handleClose();
-        // }
-        // });
-    };
+    const submitDelete = () => {
+        handleClose()
+        deleteAction()
+    }
 
     return (
         <Dialog open={visible} onOpenChange={handleStateChange}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                <Button variant="ghost" size="icon" className={cn("h-8 w-8 text-destructive hover:text-destructive", deleteClassName)}>
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Delete Record</DialogTitle>
+                    <DialogTitle>{t("delete")}</DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to delete this record?
-                        This action cannot be undone.
+                        {t("deleteDesc")}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                     <Button
                         variant="outline"
                         onClick={handleClose}
-                        disabled={isDeleting}
+                        disabled={deleteLoading}
                     >
-                        Cancel
+                        {t("cancel")}
                     </Button>
                     <Button
                         variant="destructive"
-                        onClick={handleDeleteInvoice}
-                        disabled={isDeleting}
+                        onClick={submitDelete}
+                        disabled={deleteLoading}
                     >
-                        {isDeleting ? "Deleting..." : "Delete"}
+                        {t("delete")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

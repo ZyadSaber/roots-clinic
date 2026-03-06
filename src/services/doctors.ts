@@ -23,7 +23,8 @@ export async function fetchAvailableDoctors(): Promise<DoctorSummary[]> {
       d.years_experience,
       d.rating,
       d.review_count,
-      d.status
+      d.status,
+      d.specialty_id
     FROM doctors d
     JOIN staff s ON d.staff_id = s.id
     LEFT JOIN specialties sp ON d.specialty_id = sp.id

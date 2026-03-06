@@ -18,6 +18,7 @@ export interface DoctorSummary {
   avatar_url?: string;
   review_count: number;
   years_experience: number;
+  specialty_id: string;
 }
 
 export interface DoctorState {

@@ -64,10 +64,10 @@ export type DoctorFormData = {
 interface DoctorFormProps {
     isOpen: boolean
     onClose: () => void
-    onSubmit: (data: DoctorFormData) => void
-    initialData?: Partial<DoctorFormData>
-    mode: "add" | "edit"
     specializations: Specialty[]
+    onSubmit?: (data: DoctorFormData) => void
+    initialData?: Partial<DoctorFormData>
+    mode?: "add" | "edit"
 }
 
 export function DoctorForm({ isOpen, onClose, onSubmit, initialData, mode, specializations }: DoctorFormProps) {

@@ -4,8 +4,6 @@ import { queryMany, queryOne, execute } from "@/lib/pg";
 import { Specialty } from "@/types/database";
 import { revalidatePath } from "next/cache";
 
-// ─── Read ────────────────────────────────────────────────────────────────────
-
 export async function getSpecialties(): Promise<Specialty[]> {
   const sql = `
     SELECT id, arabic_name, english_name
@@ -14,8 +12,6 @@ export async function getSpecialties(): Promise<Specialty[]> {
   `;
   return (await queryMany({ sql })) as Specialty[];
 }
-
-// ─── Create ──────────────────────────────────────────────────────────────────
 
 export async function createSpecialty(
   english_name: string,
@@ -42,8 +38,6 @@ export async function createSpecialty(
     return { success: false, error: (err as Error).message };
   }
 }
-
-// ─── Update ──────────────────────────────────────────────────────────────────
 
 export async function updateSpecialty(
   id: string,
@@ -73,8 +67,6 @@ export async function updateSpecialty(
     return { success: false, error: (err as Error).message };
   }
 }
-
-// ─── Delete ──────────────────────────────────────────────────────────────────
 
 export async function deleteSpecialty(
   id: string,

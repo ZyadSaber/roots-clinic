@@ -25,7 +25,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarGroup,
-    SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/routing"
@@ -65,7 +64,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
-                    {/* <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-4">{t("menu")}</SidebarGroupLabel> */}
                     <SidebarMenu>
                         {MANAGEMENT_NAV_ITEMS.map((item) => {
                             const Icon = iconMap[item.iconName as keyof typeof iconMap] || LayoutDashboard

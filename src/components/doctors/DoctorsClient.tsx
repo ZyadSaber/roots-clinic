@@ -10,17 +10,29 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useVisibility from "@/hooks/useVisibility";
 import { DoctorForm } from "@/components/doctors/DoctorForm";
 import { SpecialtiesDialog } from "@/components/doctors/SpecialtiesDialog";
-import { Specialty } from "@/types/database";
 import { getLocalizedValue } from "@/lib/localize";
 import { DoctorSummary } from "@/types/doctors";
 import DoctorDetails from "./DoctorDetails";
 import { getSpecialties } from "@/services/specialties";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import { setDoctorFilters } from "@/store/slices/doctorsSlice";
+import { useQuery } from "@tanstack/react-query";
 
 interface DoctorsClientProps {
     doctors: DoctorSummary[];
 }
 
 export default function DoctorsClient({ doctors }: DoctorsClientProps) {
+    const dispatch = useDispatch()
+    const specialtyId = useSelector((state: RootState) => state.doctors.filters.specialtyId)
+
+    const { data: localSpecializations = [] } = useQuery({
+        queryKey: ['specialties'],
+        queryFn: getSpecialties,
+        staleTime: 1000 * 60 * 10, // specialties rarely change, cache for 10 mins
+    })
+
     const {
         visible: isDetailsVisible,
         handleOpen: handleOpenDetails,
@@ -37,15 +49,9 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
         handleClose: handleCloseSpecialties
     } = useVisibility();
     const [selectedDoctor, setSelectedDoctor] = useState<DoctorSummary | null>(null);
-    const [selectedSpec, setSelectedSpec] = useState<string | null>(null);
-    const [localSpecializations, setLocalSpecializations] = useState<Specialty[]>([]);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
     const pillsRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        getSpecialties().then(setLocalSpecializations);
-    }, []);
 
     const updateScrollState = useCallback(() => {
         const el = pillsRef.current;
@@ -84,6 +90,8 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
         handleOpenForm()
     }
 
+
+
     return (
         <div className="flex h-[calc(100vh-4rem)] overflow-hidden relative">
             {/* Main Section */}
@@ -118,7 +126,7 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
                         <button
                             onClick={() => scrollPills("left")}
                             aria-label="Scroll left"
-                            className={`absolute start-0 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-md text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-200 shrink-0 ${canScrollLeft ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                            className={`absolute inset-s-0 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-md text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-200 shrink-0 ${canScrollLeft ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                                 }`}
                         >
                             <ChevronLeft className="w-4 h-4 rtl:hidden" />
@@ -133,19 +141,21 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
                                 }`}
                         >
                             <Button
-                                onClick={() => setSelectedSpec(null)}
-                                variant={!selectedSpec ? "default" : "outline"}
-                                className={`rounded-full h-10 px-6 font-bold whitespace-nowrap transition-all ${selectedSpec ? 'bg-background hover:bg-accent border-border/50' : ''}`}
+                                onClick={() =>
+                                    dispatch(setDoctorFilters({ specialtyId: null }))}
+                                variant={!specialtyId ? "default" : "outline"}
+                                className={`rounded-full h-10 px-6 font-bold whitespace-nowrap transition-all ${specialtyId ? 'bg-background hover:bg-accent border-border/50' : ''}`}
                             >
                                 {t("allSpecializations")}
                             </Button>
                             {localSpecializations.map((spec) => {
                                 const name = getLocalizedValue({ en: spec.english_name, ar: spec.arabic_name }, locale);
-                                const isActive = spec.id === selectedSpec;
+                                const isActive = spec.id === specialtyId;
                                 return (
                                     <Button
                                         key={spec.id}
-                                        onClick={() => setSelectedSpec(spec.id)}
+                                        onClick={() =>
+                                            dispatch(setDoctorFilters({ specialtyId: spec.id || null }))}
                                         variant={isActive ? "default" : "outline"}
                                         className={`rounded-full h-10 px-6 font-bold whitespace-nowrap transition-all ${!isActive ? 'bg-background hover:bg-accent border-border/50' : ''}`}
                                     >
@@ -159,7 +169,7 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
                         <button
                             onClick={() => scrollPills("right")}
                             aria-label="Scroll right"
-                            className={`absolute end-0 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-md text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-200 shrink-0 ${canScrollRight ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                            className={`absolute inset-e-0 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-background border border-border/50 shadow-md text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all duration-200 shrink-0 ${canScrollRight ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                                 }`}
                         >
                             <ChevronRight className="w-4 h-4 rtl:hidden" />
@@ -215,23 +225,19 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
                 handleClose={handleCloseDetails}
             />}
 
-            {/* {isFormVisible &&
+            {isFormVisible &&
                 <DoctorForm
                     isOpen={isFormVisible}
                     onClose={handleCloseForm}
-                    // onSubmit={handleFormSubmit}
-                    // mode={formMode}
-                    selectedDoctor={selectedDoctor}
                     specializations={localSpecializations}
                 />
-            } */}
+            }
 
-            <SpecialtiesDialog
+            {isSpecialtiesOpen && <SpecialtiesDialog
                 isOpen={isSpecialtiesOpen}
                 onClose={handleCloseSpecialties}
                 specializations={localSpecializations}
-                onDataChange={setLocalSpecializations}
-            />
+            />}
         </div>
     );
 }
