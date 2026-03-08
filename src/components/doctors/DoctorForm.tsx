@@ -143,7 +143,7 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
 
     const { mutate, isPending: isLoading } = useMutation({
         mutationFn: () =>
-            selectedDoctor ? createDoctor(formData) : updateDoctor(formData),
+            selectedDoctor ? updateDoctor(formData) : createDoctor(formData),
         onSuccess: (res) => {
             if (!res.success) {
                 handleFieldChange({ name: "globalError", value: t("error") })
@@ -168,7 +168,7 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
         <Dialog open={visible} onOpenChange={onClose}>
             <DialogContent
                 showCloseButton={false}
-                className="sm:max-w-[650px] p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl"
+                className="sm:max-w-162.5 p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl"
             >
                 <LoadingOverlay loading={isLoading} >
                     <div className="bg-background relative">
@@ -322,7 +322,7 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                             {t("form.scheduleDesc")}
                                         </p>
 
-                                        <ScrollArea className="h-[380px] pe-4 -me-4">
+                                        <ScrollArea className="h-95 pe-4 -me-4">
                                             <div className="space-y-4 pb-4">
                                                 {formData.schedule.map((slot, index) => (
                                                     <div

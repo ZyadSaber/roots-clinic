@@ -1,15 +1,12 @@
 "use server";
 
 import { queryMany, execute } from "@/lib/pg";
-import {
-  DoctorScheduleRecord,
-  // UpsertDoctorData,
-} from "@/types/database";
+import { DoctorScheduleRecord, UpsertDoctorData } from "@/types/database";
 import { DoctorSummary, DoctorFormData } from "@/types/doctors";
-// import { revalidatePath } from "next/cache";
+import { revalidatePath } from "next/cache";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function createDoctor(data: DoctorFormData) {
+  console.log(data);
   return {
     success: false,
     error: "Creating a doctor requires staff registration first.",
