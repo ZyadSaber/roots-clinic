@@ -119,7 +119,19 @@
       "inactive": "غير نشط",
       "successAdd": "تم تسجيل الطبيب بنجاح!",
       "successEdit": "تم تحديث ملف الطبيب!",
-      "selectSpecialty": "اختر التخصص"
+      "selectSpecialty": "اختر التخصص",
+      "phone": "تليفون",
+      "placeholders": {
+        "fullName": "Dr. John Doe",
+        "avatarUrl": "https://example.com/photo.jpg"
+      },
+      "validation": {
+        "nameRequired": "الاسم مطلوب",
+        "specialtyRequired": "التخصص مطلوب",
+        "feePositive": "يجب أن تكون الرسوم رقماً موجباً",
+        "expPositive": "يجب أن تكون الخبرة رقماً موجباً",
+        "invalidUrl": "رابط الصورة غير صالح"
+      }
     },
     "specializations": {
       "all": "جميع التخصصات",

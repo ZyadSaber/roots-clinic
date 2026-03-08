@@ -20,6 +20,21 @@ export interface DoctorSummary {
   years_experience: number;
   specialty_id: string;
 }
+export type DoctorFormData = {
+  name: string;
+  specialty_id: string;
+  consultation_fee: number;
+  status: string;
+  avatar_url?: string;
+  years_experience: number;
+  phone?: string;
+  schedule: {
+    day: string;
+    startTime: string;
+    endTime: string;
+    active: boolean;
+  }[];
+};
 
 export interface DoctorState {
   // The lightweight list used across modules (booking form, command center)

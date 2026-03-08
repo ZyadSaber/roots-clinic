@@ -16,7 +16,7 @@ import DoctorDetails from "./DoctorDetails";
 import { getSpecialties } from "@/services/specialties";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { setDoctorFilters } from "@/store/slices/doctorsSlice";
+import { setDoctorFilters, setSelectedDoctor } from "@/store/slices/doctorsSlice";
 import { useQuery } from "@tanstack/react-query";
 
 interface DoctorsClientProps {
@@ -26,6 +26,8 @@ interface DoctorsClientProps {
 export default function DoctorsClient({ doctors }: DoctorsClientProps) {
     const dispatch = useDispatch()
     const specialtyId = useSelector((state: RootState) => state.doctors.filters.specialtyId)
+    const selectedDoctorId = useSelector((state: RootState) => state.doctors.selectedDoctorId)
+    const selectedDoctor = doctors.find(d => d.id === selectedDoctorId);
 
     const { data: localSpecializations = [] } = useQuery({
         queryKey: ['specialties'],
@@ -48,7 +50,7 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
         handleOpen: handleOpenSpecialties,
         handleClose: handleCloseSpecialties
     } = useVisibility();
-    const [selectedDoctor, setSelectedDoctor] = useState<DoctorSummary | null>(null);
+
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
     const pillsRef = useRef<HTMLDivElement>(null);
@@ -79,18 +81,17 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
     const locale = useLocale();
     const t = useTranslations("Doctors");
     const tc = useTranslations("Common");
+    const ts = useTranslations("Doctors.specializations");
 
     const handleDoctorClick = (doc: DoctorSummary) => {
-        setSelectedDoctor(doc);
+        dispatch(setSelectedDoctor(doc.id));  // store just the ID
         handleOpenDetails();
     };
 
     const handleOpenNewDoctor = () => {
-        setSelectedDoctor(null)
-        handleOpenForm()
+        dispatch(setSelectedDoctor(null));    // clear selection
+        handleOpenForm();
     }
-
-
 
     return (
         <div className="flex h-[calc(100vh-4rem)] overflow-hidden relative">
@@ -108,7 +109,7 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
                                 variant="outline"
                                 className="rounded-xl h-12 px-5 gap-2 font-bold border-border/50"
                             >
-                                <Settings2 className="w-4 h-4" /> Specialties
+                                <Settings2 className="w-4 h-4" /> {ts("specialty")}
                             </Button>
                             <Button
                                 onClick={handleOpenNewDoctor}
@@ -219,17 +220,21 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
                 </div>
             </div>
 
-            {isDetailsVisible && <DoctorDetails
-                visible={isDetailsVisible}
-                selectedDoctor={selectedDoctor}
-                handleClose={handleCloseDetails}
-            />}
+            {isDetailsVisible && selectedDoctor &&
+                <DoctorDetails
+                    visible={isDetailsVisible}
+                    selectedDoctor={selectedDoctor}
+                    handleClose={handleCloseDetails}
+                    handleOpenForm={handleOpenForm}
+                />
+            }
 
             {isFormVisible &&
                 <DoctorForm
-                    isOpen={isFormVisible}
+                    visible={isFormVisible}
                     onClose={handleCloseForm}
                     specializations={localSpecializations}
+                    selectedDoctor={selectedDoctor}
                 />
             }
 

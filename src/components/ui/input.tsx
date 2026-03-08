@@ -1,17 +1,22 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label";
+import { LucideIcon } from "lucide-react";
 
 type InputProps = React.ComponentProps<"input"> & {
   error?: string
   label?: string
-  containerClassName?: string
+  containerClassName?: string;
+  icon?: LucideIcon
 }
 
-function Input({ className, type, error, name, label, containerClassName, ...props }: InputProps) {
+function Input({ icon: Icon, className, type, error, name, label, containerClassName, ...props }: InputProps) {
   return (
     <div className={cn("space-y-2 px-1", containerClassName)}>
-      {!!label && <Label htmlFor={name} className={cn("text-sm font-medium", error && "text-destructive")} >{label}</Label>}
+      {/* {!!label && <Label htmlFor={name} className={cn("text-sm font-medium", error && "text-destructive")} >{label}</Label>} */}
+      {(Icon || label) && <Label className="text-xs uppercase font-black tracking-widest text-muted-foreground px-1 flex items-center gap-2">
+        {Icon && <Icon className="w-3 h-3" />} {label}
+      </Label>}
       <input
         type={type}
         data-slot="input"

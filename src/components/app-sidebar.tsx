@@ -3,7 +3,6 @@
 import * as React from "react"
 import {
     Banknote,
-    UserCog,
     LayoutDashboard,
     Package,
     Stethoscope,
@@ -39,7 +38,6 @@ const iconMap = {
     "image": Image,
     "banknote": Banknote,
     "calendar": Calendar,
-    "userCog": UserCog,
     "dollarSign": DollarSign,
     "fileText": FileText,
     "shield": Shield
@@ -65,7 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarMenu>
-                        {MANAGEMENT_NAV_ITEMS.map((item) => {
+                        {MANAGEMENT_NAV_ITEMS.map((item, index) => {
                             const Icon = iconMap[item.iconName as keyof typeof iconMap] || LayoutDashboard
                             const isActive = pathname.includes(item.href)
 
@@ -82,7 +80,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                 <Icon className="w-5 h-5" />
                                                 <span className="text-sm font-medium">{t(item.labelKey)}</span>
                                             </div>
-                                            <Badge
+                                            {item.hasCount && <Badge
                                                 variant="secondary"
                                                 className={cn(
                                                     "text-[10px] h-5 px-1.5 min-w-5 flex items-center justify-center rounded-full",
@@ -91,8 +89,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                                         : "bg-muted text-muted-foreground"
                                                 )}
                                             >
-                                                {0}
-                                            </Badge>
+                                                {3 + index * 3}
+                                            </Badge>}
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

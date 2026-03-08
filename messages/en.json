@@ -120,6 +120,7 @@
       "successAdd": "Doctor registered successfully!",
       "successEdit": "Doctor profile updated!",
       "selectSpecialty": "Select specialty",
+      "phone": "Phone",
       "placeholders": {
         "fullName": "Dr. John Doe",
         "avatarUrl": "https://example.com/photo.jpg"

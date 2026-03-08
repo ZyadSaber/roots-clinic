@@ -3,4 +3,5 @@ export interface NavItemConfig {
   labelKey: string; // Key for translation, e.g., 'dashboard'
   href: string;
   descriptionKey: string; // Key for translation or just a string
+  hasCount?: boolean;
 }

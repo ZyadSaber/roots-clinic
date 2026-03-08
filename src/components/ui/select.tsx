@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, X } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, LucideIcon, X } from "lucide-react"
 import { Label } from "@/components/ui/label";
 
 import { cn } from "@/lib/utils"
@@ -196,6 +196,7 @@ export function SelectField<T extends { key: string; label: string }>({
   preSelectFirstKey = false,
   placeholder,
   renderAddField,
+  icon: Icon
 }: {
   label: string;
   options: T[];
@@ -211,6 +212,7 @@ export function SelectField<T extends { key: string; label: string }>({
   preSelectFirstKey?: boolean;
   placeholder?: string;
   renderAddField?: (onSuccess: (newId: string) => void) => React.ReactNode;
+  icon?: LucideIcon;
 }) {
   const [search, setSearch] = React.useState("")
   const { visible, handleClose, handleStateChange } = useVisibility()
@@ -237,7 +239,9 @@ export function SelectField<T extends { key: string; label: string }>({
 
   return (
     <div className={cn("space-y-2 px-1", containerClassName)}>
-      <Label className="text-sm font-semibold opacity-70">{label}</Label>
+      <Label className="text-xs uppercase font-black tracking-widest text-muted-foreground px-1 flex items-center gap-2">
+        {Icon && <Icon className="w-3 h-3" />} {label}
+      </Label>
       <Select
         name={name}
         value={value}
