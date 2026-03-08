@@ -1,0 +1,10 @@
+services:
+  next-app:
+    build: .
+    container_name: nextjs-9090
+    ports:
+      - "9090:9090"
+    environment:
+      - NODE_ENV=production
+      - PORT=9090
+    restart: always
