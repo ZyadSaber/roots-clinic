@@ -13,7 +13,10 @@ import { LoadingOverlay } from "../ui/LoadingOverlay";
 import { getDoctorSchedule } from "@/services/doctors";
 import days from "@/constants/days";
 import isActiveNow from "@/lib/isActiveNow";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteDoctor } from "@/services/doctors";
+import DeleteDialog from "@/components/shared/delete-dialog";
+import { toast } from "sonner";
 
 
 interface DoctorDetailsProps {
@@ -33,6 +36,21 @@ const DoctorDetails = ({ visible, selectedDoctor, handleClose, handleOpenForm }:
         queryFn: () => getDoctorSchedule(selectedDoctor!.id),
         enabled: !!selectedDoctor?.id && visible,
         staleTime: 1000 * 60 * 5,
+    });
+
+    const queryClient = useQueryClient();
+    const { mutate: mutateDelete, isPending: isDeleting } = useMutation({
+        mutationFn: () => deleteDoctor(selectedDoctor.id),
+        onSuccess: (res) => {
+            if (res?.success) {
+                toast.success(tc("success"));
+                queryClient.invalidateQueries({ queryKey: ['doctors'] });
+                handleClose();
+            } else {
+                toast.error(tc("error"));
+            }
+        },
+        onError: () => toast.error(tc("error"))
     });
 
     return (
@@ -131,6 +149,11 @@ const DoctorDetails = ({ visible, selectedDoctor, handleClose, handleOpenForm }:
                     <Button variant="outline" onClick={handleOpenForm} className="flex-1 h-14 rounded-2xl font-black text-lg gap-2 shadow-lg shadow-primary/20">
                         <Edit2 className="w-5 h-5" /> {t("editFees")}
                     </Button>
+                    <DeleteDialog
+                        deleteLoading={isDeleting}
+                        deleteAction={mutateDelete}
+                        deleteClassName="h-14 w-14 rounded-2xl bg-destructive/10 hover:bg-destructive hover:text-white transition-all shadow-lg shadow-destructive/20"
+                    />
                 </div>
             </motion.aside>
         </AnimatePresence>

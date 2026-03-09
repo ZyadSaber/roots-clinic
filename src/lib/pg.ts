@@ -1,5 +1,5 @@
 // lib/db.js
-import { Pool } from "pg";
+import { Pool, PoolClient } from "pg";
 
 interface QueryParams {
   sql: string;
@@ -48,6 +48,23 @@ export async function execute({ sql, params }: QueryParams) {
   try {
     const result = await client.query(sql, params);
     return result;
+  } finally {
+    client.release();
+  }
+}
+
+export async function executeTransaction<T>(
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error; // re-throw so the server action catch handles it
   } finally {
     client.release();
   }

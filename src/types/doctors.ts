@@ -21,6 +21,8 @@ export interface DoctorSummary {
   specialty_id: string;
 }
 export type DoctorFormData = {
+  id?: string;
+  staff_id?: string;
   name: string;
   specialty_id: string;
   consultation_fee: number;

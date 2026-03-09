@@ -27,19 +27,3 @@ export interface DoctorScheduleRecord {
   end_time: string;
   is_active: boolean;
 }
-
-export interface UpsertDoctorData {
-  id?: string;
-  name: string;
-  specialty_id?: string;
-  fee: number;
-  exp: number;
-  status: string;
-  image?: string;
-  schedule?: {
-    day_of_week: number;
-    start_time: string;
-    end_time: string;
-    is_active: boolean;
-  }[];
-}

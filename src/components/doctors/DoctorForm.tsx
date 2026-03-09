@@ -133,7 +133,7 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
         mutationFn: () =>
             selectedDoctor ? updateDoctor(formData) : createDoctor(formData),
         onSuccess: (res) => {
-            if (!res.success) {
+            if (!res || !res.success) {
                 handleFieldChange({ name: "globalError", value: t("error") })
                 return;
             }
@@ -214,7 +214,7 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                             value={formData.avatar_url}
                                             onChange={handleChange}
                                             placeholder={t("form.placeholders.avatarUrl")}
-                                            className={`rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20 ${errors.image ? 'ring-2 ring-destructive' : ''}`}
+                                            className={`rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20 ${errors.avatar_url ? 'ring-2 ring-destructive' : ''}`}
                                             containerClassName="w-full"
                                             error={errors.avatar_url}
                                             label={t("form.avatarUrl")}
@@ -252,9 +252,9 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                                 value={formData.phone}
                                                 onChange={handleChange}
                                                 icon={Phone}
-                                                className={`rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20 ${errors.name ? 'ring-2 ring-destructive' : ''}`}
+                                                className={`rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20 ${errors.phone ? 'ring-2 ring-destructive' : ''}`}
                                                 label={t("form.phone")}
-                                                error={errors.name}
+                                                error={errors.phone}
                                             />
 
                                             <Input
@@ -274,8 +274,9 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                                 value={formData.years_experience}
                                                 onChange={handleChange}
                                                 icon={Briefcase}
-                                                className={`rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20 ${errors.exp ? 'ring-2 ring-destructive' : ''}`}
+                                                className={`rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20 ${errors.years_experience ? 'ring-2 ring-destructive' : ''}`}
                                                 label={t("form.yearsExp")}
+                                                error={errors.years_experience}
                                             />
                                         </div>
                                     </div>

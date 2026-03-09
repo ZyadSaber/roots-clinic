@@ -1,72 +1,10 @@
 "use server";
 
 import isArrayHasData from "@/lib/isArrayHasData";
-import { queryMany, execute, pool } from "@/lib/pg";
-import { DoctorScheduleRecord, UpsertDoctorData } from "@/types/database";
+import { queryMany, executeTransaction } from "@/lib/pg";
+import { DoctorScheduleRecord } from "@/types/database";
 import { DoctorSummary, DoctorFormData } from "@/types/doctors";
 import { revalidatePath } from "next/cache";
-
-export async function updateDoctor(
-  data: DoctorFormData & { id?: string; staff_id?: string },
-) {
-  try {
-    if (!data.id || !data.staff_id) {
-      return { success: false, error: "Missing doctor ID or staff ID" };
-    }
-
-    // 1. Update staff
-    await execute({
-      sql: `UPDATE staff SET full_name = $1, phone = $2, avatar_url = $3, updated_at = NOW() WHERE id = $4`,
-      params: [
-        data.name,
-        data.phone || null,
-        data.avatar_url || null,
-        data.staff_id,
-      ],
-    });
-
-    // 2. Update doctors
-    await execute({
-      sql: `UPDATE doctors SET specialty_id = $1, consultation_fee = $2, years_experience = $3, status = $4, updated_at = NOW() WHERE id = $5`,
-      params: [
-        data.specialty_id || null,
-        data.consultation_fee,
-        data.years_experience,
-        data.status,
-        data.id,
-      ],
-    });
-
-    // 3. Update schedules
-    await execute({
-      sql: `DELETE FROM doctor_schedules WHERE doctor_id = $1`,
-      params: [data.id],
-    });
-
-    if (data.schedule && data.schedule.length > 0) {
-      for (const slot of data.schedule) {
-        await execute({
-          sql: `INSERT INTO doctor_schedules (doctor_id, day_of_week, start_time, end_time, is_active) VALUES ($1, $2, $3, $4, $5)`,
-          params: [
-            data.id,
-            slot.day_of_week,
-            slot.start_time,
-            slot.end_time,
-            slot.is_active,
-          ],
-        });
-      }
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating doctor:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
 
 export async function fetchAvailableDoctors(): Promise<DoctorSummary[]> {
   const sql = `
@@ -107,7 +45,7 @@ export async function getDoctorSchedule(
       is_active
     FROM doctor_schedules
 
-    WHERE doctor_id = $1
+    WHERE doctor_id = $1 AND is_active = TRUE
     ORDER BY day_of_week ASC
   `;
   return (await queryMany({
@@ -117,9 +55,6 @@ export async function getDoctorSchedule(
 }
 
 export async function createDoctor(data: DoctorFormData) {
-  const client = await pool.connect();
-  let doctorId: string | null = null;
-
   const {
     name,
     specialty_id,
@@ -138,78 +73,177 @@ export async function createDoctor(data: DoctorFormData) {
     .slice(0, 2)
     .join(".");
 
+  let staffId: string | null = null;
+  let doctorId: string;
+
   try {
-    await client.query("BEGIN");
+    const { doctor_id } = await executeTransaction(async (client) => {
+      const staffResult = await client.query(
+        `
+                INSERT INTO staff (username, full_name, role, phone, avatar_url, is_active)
+                VALUES ($1, $2, 'doctor', $3, $4, TRUE)
+                RETURNING id
+              `,
+        [username, name, phone || "", avatar_url || ""],
+      );
+      staffId = staffResult.rows[0].id;
 
-    const sql = `
-        INSERT INTO doctors
-        (name, specialty_id, avatar_url, years_experience, phone, consultation_fee, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id
-      `;
+      const doctorResult = await client.query(
+        `
+                INSERT INTO doctors (staff_id, specialty_id, consultation_fee, years_experience, status)
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id
+              `,
+        [staffId, specialty_id, consultation_fee, years_experience, status],
+      );
+      doctorId = doctorResult.rows[0].id;
 
-    const doctorResult = await execute({
-      sql,
-      params: [
-        username,
-        specialty_id,
-        avatar_url || "",
-        years_experience,
-        phone || "",
-        consultation_fee,
-        status,
-      ],
-    });
+      if (isArrayHasData(schedule)) {
+        const values: (string | number | boolean)[] = [];
+        const placeholders = schedule.map((slot, i) => {
+          const base = i * 5;
+          values.push(
+            doctorId,
+            slot.day_of_week,
+            slot.start_time,
+            slot.end_time,
+            slot.is_active,
+          );
+          return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+        });
 
-    doctorId = doctorResult.rows[0].id;
+        console.log(schedule, placeholders, values);
 
-    if (isArrayHasData(schedule)) {
-      // Build a multi-row insert instead of looping queries
-      const values: unknown[] = [];
-      const placeholders = schedule.map((slot, i) => {
-        const base = i * 5;
-        values.push(
-          doctorId,
-          slot.day_of_week,
-          slot.start_time,
-          slot.end_time,
-          slot.is_active,
-        );
-        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
-      });
-
-      await client.query(
-        `INSERT INTO doctor_schedules
+        await client.query(
+          `INSERT INTO doctor_schedules
           (doctor_id, day_of_week, start_time, end_time, is_active)
           VALUES ${placeholders.join(", ")}`,
-        values,
-      );
-    }
+          values,
+        );
+      }
 
-    await client.query("COMMIT");
-    return { success: true, doctorId };
+      return { doctor_id: doctorId };
+    });
+
+    revalidatePath("/[locale]/doctors", "page");
+    revalidatePath("/[locale]/patients", "page");
+    return { success: true, doctor_id };
   } catch (error) {
-    await client.query("ROLLBACK");
     console.error("[addDoctor] failed:", error);
     return { success: false, error: "Failed to add doctor." };
-  } finally {
-    client.release();
   }
-  // Update existing doctor
-  // const sql = `
-  //     UPDATE doctors
-  //     SET
-  //       consultation_fee = $1,
-  //       years_experience = $2,
-  //       status = $3,
-  //       updated_at = NOW()
-  //     WHERE id = $4
-  //   `;
-  // await execute({
-  //   sql,
-  //   params: [],
-  // });
+}
 
-  // revalidatePath("/[locale]/doctors", "page");
-  // return { success: true };
+export async function updateDoctor(data: DoctorFormData) {
+  const {
+    name,
+    specialty_id,
+    status,
+    avatar_url,
+    years_experience,
+    phone,
+    consultation_fee,
+    schedule,
+    id: doctorId,
+    staff_id: staffId,
+  } = data;
+
+  const username = name
+    .toLowerCase()
+    .replace(/^dr\.\s*/, "dr.")
+    .split(" ")
+    .slice(0, 2)
+    .join(".");
+
+  if (doctorId && staffId) {
+    try {
+      await executeTransaction(async (client) => {
+        // 1. Update staff
+        await client.query(
+          `
+          UPDATE staff 
+          SET full_name = $1, username = $2, phone = $3, avatar_url = $4, updated_at = NOW()
+          WHERE id = $5
+        `,
+          [name, username, phone || "", avatar_url || "", staffId],
+        );
+
+        // 2. Update doctors
+        await client.query(
+          `
+          UPDATE doctors
+          SET specialty_id = $1, consultation_fee = $2, years_experience = $3, status = $4, updated_at = NOW()
+          WHERE id = $5
+        `,
+          [specialty_id, consultation_fee, years_experience, status, doctorId],
+        );
+
+        // 3. Replace schedule
+        if (isArrayHasData(schedule)) {
+          await client.query(
+            `DELETE FROM doctor_schedules WHERE doctor_id = $1`,
+            [doctorId],
+          );
+
+          const values: (string | number | boolean)[] = [];
+          const placeholders = schedule.map((slot, i) => {
+            const base = i * 5;
+            values.push(
+              doctorId,
+              slot.day_of_week,
+              slot.start_time,
+              slot.end_time,
+              slot.is_active,
+            );
+            return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+          });
+
+          await client.query(
+            `INSERT INTO doctor_schedules
+            (doctor_id, day_of_week, start_time, end_time, is_active)
+          VALUES ${placeholders.join(", ")}`,
+            values,
+          );
+        }
+      });
+
+      revalidatePath("/[locale]/doctors", "page");
+      return { success: true };
+    } catch (error) {
+      console.error("[updateDoctor] failed:", error);
+      return { success: false, error: "Failed to update doctor." };
+    }
+  }
+
+  return { success: false, error: "Missing doctor ID or staff ID." };
+}
+
+export async function deleteDoctor(doctorId: string) {
+  try {
+    await executeTransaction(async (client) => {
+      // 1. Get staffId from doctors table
+      const result = await client.query<{ staff_id: string }>(
+        `SELECT staff_id FROM doctors WHERE id = $1`,
+        [doctorId],
+      );
+
+      if (!result.rows[0]) {
+        throw new Error(`Doctor with id ${doctorId} not found`);
+      }
+
+      const staffId = result.rows[0].staff_id;
+
+      // 2. Delete doctor first (doctor_schedules cascades automatically)
+      await client.query(`DELETE FROM doctors WHERE id = $1`, [doctorId]);
+
+      // 3. Delete staff
+      await client.query(`DELETE FROM staff WHERE id = $1`, [staffId]);
+    });
+
+    revalidatePath("/[locale]/doctors", "page");
+    return { success: true };
+  } catch (error) {
+    console.error("[deleteDoctor] failed:", error);
+    return { success: false, error: "Failed to delete doctor." };
+  }
 }
