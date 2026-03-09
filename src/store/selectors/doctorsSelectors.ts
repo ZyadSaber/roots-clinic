@@ -20,8 +20,6 @@ export const selectFilteredDoctors = (doctors: DoctorSummary[]) =>
         const matchesStatus =
           filters.status === "all" ? true : doc.status === filters.status;
 
-        console.log(doctors);
-
         const matchesSpecialty = filters.specialtyId
           ? doc.specialty_id === filters.specialtyId
           : true;

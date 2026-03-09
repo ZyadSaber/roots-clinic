@@ -5,11 +5,17 @@ interface QueryParams {
   sql: string;
   params?: (string | number | boolean | Date | null)[];
 }
+const globalForPg = global as unknown as { pgPool: Pool };
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // required for Supabase
-});
+export const pool =
+  globalForPg.pgPool ||
+  new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }, // required for Supabase
+    connectionTimeoutMillis: 10000, // 10 seconds timeout
+  });
+
+if (process.env.NODE_ENV !== "production") globalForPg.pgPool = pool;
 
 export async function query({ sql, params }: QueryParams) {
   const client = await pool.connect();
@@ -41,7 +47,7 @@ export async function execute({ sql, params }: QueryParams) {
   const client = await pool.connect();
   try {
     const result = await client.query(sql, params);
-    return result.rowCount;
+    return result;
   } finally {
     client.release();
   }

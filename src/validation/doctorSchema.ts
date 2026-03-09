@@ -16,9 +16,10 @@ export const getDoctorSchema = (t: (key: string) => string) =>
     schedule: z.array(
       z.object({
         day: z.string(),
-        startTime: z.string(),
-        endTime: z.string(),
-        active: z.boolean(),
+        day_of_week: z.number(),
+        start_time: z.string(),
+        end_time: z.string(),
+        is_active: z.boolean(),
       }),
     ),
   });

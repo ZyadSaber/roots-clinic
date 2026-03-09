@@ -12,7 +12,6 @@ import {
     Save,
     Loader2,
     Activity,
-    Plus,
     Phone
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -31,7 +30,6 @@ import { useLocale, useTranslations } from "next-intl"
 import { DOCTOR_STATUSES } from "@/constants/status"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Specialty, DoctorScheduleRecord } from "@/types/database"
-import isArrayHasData from "@/lib/isArrayHasData"
 import {
     Tabs,
     TabsContent,
@@ -68,38 +66,28 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
     });
 
     const computedSchedule = useMemo(() => {
-        const defaultDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-
-        if (!isArrayHasData(doctorSchedule)) {
-            return defaultDays.map(day => ({ day, startTime: "09:00", endTime: "17:00", active: true }));
-        }
-
-        const hasWeekend = doctorSchedule.some((s: DoctorScheduleRecord) => s.day_of_week === 0 || s.day_of_week === 6);
-        const daysToMap = hasWeekend
-            ? days.map(d => d.en)
-            : defaultDays;
-
-        return daysToMap.map(dayName => {
-            const dayIndex = days.find(d => d.en === dayName)?.id ?? 0;
-            const foundSlot = doctorSchedule.find((slot: DoctorScheduleRecord) => slot.day_of_week === dayIndex);
+        return days.map(dayInfo => {
+            const foundSlot = doctorSchedule.find((slot: DoctorScheduleRecord) => slot.day_of_week === dayInfo.id);
 
             if (foundSlot) {
                 return {
-                    day: dayName,
-                    startTime: foundSlot.start_time.substring(0, 5),
-                    endTime: foundSlot.end_time.substring(0, 5),
-                    active: foundSlot.is_active
+                    day_of_week: foundSlot.day_of_week,
+                    day: getLocalizedValue({ en: dayInfo.en, ar: dayInfo.ar }, locale),
+                    start_time: foundSlot.start_time.substring(0, 5),
+                    end_time: foundSlot.end_time.substring(0, 5),
+                    is_active: foundSlot.is_active
                 };
             }
 
             return {
-                day: dayName,
-                startTime: "09:00",
-                endTime: "17:00",
-                active: false
+                day_of_week: dayInfo.id,
+                day: getLocalizedValue({ en: dayInfo.en, ar: dayInfo.ar }, locale),
+                start_time: "09:00",
+                end_time: "17:00",
+                is_active: false
             };
         });
-    }, [doctorSchedule]);
+    }, [doctorSchedule, locale]);
 
     const computedSpecialtyList = useMemo(() =>
         specializations.map(specialty => ({
@@ -326,35 +314,35 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                             <div className="space-y-4 pb-4">
                                                 {formData.schedule.map((slot, index) => (
                                                     <div
-                                                        key={slot.day}
-                                                        className={`p-5 rounded-[2rem] border transition-all ${slot.active
+                                                        key={slot.day_of_week}
+                                                        className={`p-5 rounded-[2rem] border transition-all ${slot.is_active
                                                             ? 'bg-background border-primary/20 shadow-xl shadow-primary/5'
                                                             : 'bg-accent/10 border-border/40 opacity-60'
                                                             }`}
                                                     >
                                                         <div className="flex items-center justify-between mb-4">
                                                             <div className="flex items-center gap-3">
-                                                                <div className={`w-3 h-3 rounded-full ${slot.active ? 'bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]' : 'bg-muted-foreground/30'}`} />
-                                                                <h5 className="font-black text-lg">{t(`days.${slot.day}`)}</h5>
+                                                                <div className={`w-3 h-3 rounded-full ${slot.is_active ? 'bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]' : 'bg-muted-foreground/30'}`} />
+                                                                <h5 className="font-black text-lg">{slot.day}</h5>
                                                             </div>
                                                             <Button
                                                                 type="button"
-                                                                variant={slot.active ? "default" : "outline"}
+                                                                variant={slot.is_active ? "default" : "outline"}
                                                                 size="sm"
                                                                 onClick={() => {
                                                                     const newSchedule = [...formData.schedule]
-                                                                    newSchedule[index].active = !newSchedule[index].active
+                                                                    newSchedule[index] = { ...newSchedule[index], is_active: !newSchedule[index].is_active }
                                                                     handleFieldChange({ name: "schedule", value: newSchedule })
                                                                 }}
-                                                                className={`rounded-xl px-4 h-9 font-bold transition-all ${!slot.active ? 'text-[10px] uppercase tracking-wider' : ''
+                                                                className={`rounded-xl px-4 h-9 font-bold transition-all ${!slot.is_active ? 'text-[10px] uppercase tracking-wider' : ''
                                                                     }`}
                                                             >
-                                                                {slot.active ? t("form.active") : t("form.inactive")}
+                                                                {slot.is_active ? t("form.active") : t("form.inactive")}
                                                             </Button>
                                                         </div>
 
                                                         <AnimatePresence>
-                                                            {slot.active && (
+                                                            {slot.is_active && (
                                                                 <motion.div
                                                                     initial={{ height: 0, opacity: 0 }}
                                                                     animate={{ height: "auto", opacity: 1 }}
@@ -365,10 +353,10 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                                                         <Label className="text-[10px] uppercase font-black text-muted-foreground/60 px-1 ms-1">{t("form.startTime")}</Label>
                                                                         <Input
                                                                             type="time"
-                                                                            value={slot.startTime}
+                                                                            value={slot.start_time}
                                                                             onChange={(e) => {
                                                                                 const newSchedule = [...formData.schedule]
-                                                                                newSchedule[index].startTime = e.target.value
+                                                                                newSchedule[index] = { ...newSchedule[index], start_time: e.target.value }
                                                                                 handleFieldChange({ name: "schedule", value: newSchedule })
                                                                             }}
                                                                             className="rounded-xl h-11 bg-accent/20 border-none focus:ring-1 focus:ring-primary/20"
@@ -378,10 +366,10 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                                                         <Label className="text-[10px] uppercase font-black text-muted-foreground/60 px-1 ms-1">{t("form.endTime")}</Label>
                                                                         <Input
                                                                             type="time"
-                                                                            value={slot.endTime}
+                                                                            value={slot.end_time}
                                                                             onChange={(e) => {
                                                                                 const newSchedule = [...formData.schedule]
-                                                                                newSchedule[index].endTime = e.target.value
+                                                                                newSchedule[index] = { ...newSchedule[index], end_time: e.target.value }
                                                                                 handleFieldChange({ name: "schedule", value: newSchedule })
                                                                             }}
                                                                             className="rounded-xl h-11 bg-accent/20 border-none focus:ring-1 focus:ring-primary/20"
@@ -393,23 +381,6 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                                     </div>
                                                 ))}
 
-                                                {/* Weekend Days Adder */}
-                                                {!formData.schedule.find(s => s.day === "Saturday") && (
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            const newSchedule = [...formData.schedule,
-                                                            { day: "Saturday", startTime: "10:00", endTime: "14:00", active: false },
-                                                            { day: "Sunday", startTime: "10:00", endTime: "14:00", active: false }
-                                                            ]
-                                                            handleFieldChange({ name: "schedule", value: newSchedule })
-                                                        }}
-                                                        className="w-full h-12 rounded-2xl border-dashed border-2 hover:bg-accent/30 font-bold gap-2 opacity-60 hover:opacity-100 transition-all"
-                                                    >
-                                                        <Plus className="w-4 h-4" /> {t("form.includeWeekend")}
-                                                    </Button>
-                                                )}
                                             </div>
                                         </ScrollArea>
                                     </div>

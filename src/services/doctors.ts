@@ -1,17 +1,10 @@
 "use server";
 
-import { queryMany, execute } from "@/lib/pg";
+import isArrayHasData from "@/lib/isArrayHasData";
+import { queryMany, execute, pool } from "@/lib/pg";
 import { DoctorScheduleRecord, UpsertDoctorData } from "@/types/database";
 import { DoctorSummary, DoctorFormData } from "@/types/doctors";
 import { revalidatePath } from "next/cache";
-
-export async function createDoctor(data: DoctorFormData) {
-  console.log(data);
-  return {
-    success: false,
-    error: "Creating a doctor requires staff registration first.",
-  };
-}
 
 export async function updateDoctor(
   data: DoctorFormData & { id?: string; staff_id?: string },
@@ -50,31 +43,18 @@ export async function updateDoctor(
       params: [data.id],
     });
 
-    const dayNameMap: Record<string, number> = {
-      Sunday: 0,
-      Monday: 1,
-      Tuesday: 2,
-      Wednesday: 3,
-      Thursday: 4,
-      Friday: 5,
-      Saturday: 6,
-    };
-
     if (data.schedule && data.schedule.length > 0) {
       for (const slot of data.schedule) {
-        const dayIndex = dayNameMap[slot.day];
-        if (dayIndex !== undefined) {
-          await execute({
-            sql: `INSERT INTO doctor_schedules (doctor_id, day_of_week, start_time, end_time, is_active) VALUES ($1, $2, $3, $4, $5)`,
-            params: [
-              data.id,
-              dayIndex,
-              slot.startTime,
-              slot.endTime,
-              slot.active,
-            ],
-          });
-        }
+        await execute({
+          sql: `INSERT INTO doctor_schedules (doctor_id, day_of_week, start_time, end_time, is_active) VALUES ($1, $2, $3, $4, $5)`,
+          params: [
+            data.id,
+            slot.day_of_week,
+            slot.start_time,
+            slot.end_time,
+            slot.is_active,
+          ],
+        });
       }
     }
 
@@ -136,24 +116,100 @@ export async function getDoctorSchedule(
   })) as DoctorScheduleRecord[];
 }
 
-// export async function saveDoctor(data: UpsertDoctorData) {
-//   if (data.id) {
-//     // Update existing doctor
-//     const sql = `
-//       UPDATE doctors
-//       SET
-//         consultation_fee = $1,
-//         years_experience = $2,
-//         status = $3,
-//         updated_at = NOW()
-//       WHERE id = $4
-//     `;
-//     await execute({
-//       sql,
-//       params: [data.fee, data.exp, data.status, data.id],
-//     });
-//   }
+export async function createDoctor(data: DoctorFormData) {
+  const client = await pool.connect();
+  let doctorId: string | null = null;
 
-//   revalidatePath("/[locale]/doctors", "page");
-//   return { success: true };
-// }
+  const {
+    name,
+    specialty_id,
+    status,
+    avatar_url,
+    years_experience,
+    phone,
+    consultation_fee,
+    schedule,
+  } = data;
+
+  const username = name
+    .toLowerCase()
+    .replace(/^dr\.\s*/, "dr.")
+    .split(" ")
+    .slice(0, 2)
+    .join(".");
+
+  try {
+    await client.query("BEGIN");
+
+    const sql = `
+        INSERT INTO doctors
+        (name, specialty_id, avatar_url, years_experience, phone, consultation_fee, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id
+      `;
+
+    const doctorResult = await execute({
+      sql,
+      params: [
+        username,
+        specialty_id,
+        avatar_url || "",
+        years_experience,
+        phone || "",
+        consultation_fee,
+        status,
+      ],
+    });
+
+    doctorId = doctorResult.rows[0].id;
+
+    if (isArrayHasData(schedule)) {
+      // Build a multi-row insert instead of looping queries
+      const values: unknown[] = [];
+      const placeholders = schedule.map((slot, i) => {
+        const base = i * 5;
+        values.push(
+          doctorId,
+          slot.day_of_week,
+          slot.start_time,
+          slot.end_time,
+          slot.is_active,
+        );
+        return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
+      });
+
+      await client.query(
+        `INSERT INTO doctor_schedules
+          (doctor_id, day_of_week, start_time, end_time, is_active)
+          VALUES ${placeholders.join(", ")}`,
+        values,
+      );
+    }
+
+    await client.query("COMMIT");
+    return { success: true, doctorId };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("[addDoctor] failed:", error);
+    return { success: false, error: "Failed to add doctor." };
+  } finally {
+    client.release();
+  }
+  // Update existing doctor
+  // const sql = `
+  //     UPDATE doctors
+  //     SET
+  //       consultation_fee = $1,
+  //       years_experience = $2,
+  //       status = $3,
+  //       updated_at = NOW()
+  //     WHERE id = $4
+  //   `;
+  // await execute({
+  //   sql,
+  //   params: [],
+  // });
+
+  // revalidatePath("/[locale]/doctors", "page");
+  // return { success: true };
+}

@@ -30,9 +30,10 @@ export type DoctorFormData = {
   phone?: string;
   schedule: {
     day: string;
-    startTime: string;
-    endTime: string;
-    active: boolean;
+    day_of_week: number;
+    start_time: string;
+    end_time: string;
+    is_active: boolean;
   }[];
 };
 
