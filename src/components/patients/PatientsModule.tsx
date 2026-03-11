@@ -47,7 +47,12 @@ import { deletePatient } from "@/services/patients"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-export function PatientsModule({ patients, stats }: { stats: PatientStats, patients: PatientSummary[] }) {
+interface PatientsModuleProps {
+    stats: PatientStats;
+    patients: PatientSummary[];
+}
+
+export function PatientsModule({ patients, stats }: PatientsModuleProps) {
     const t = useTranslations("Patients")
     const tc = useTranslations("Common")
     const tForm = useTranslations("Patients.form")
@@ -205,7 +210,7 @@ export function PatientsModule({ patients, stats }: { stats: PatientStats, patie
                                         <TableCell className="hidden sm:table-cell text-muted-foreground font-bold tabular-nums">
                                             {patient.last_visit ? new Date(patient.last_visit).toLocaleDateString() : '—'}
                                         </TableCell>
-                                        <TableCell className="text-right px-8" onClick={() => dispatch(setSelectedPatient(patient.patient_id))} >
+                                        <TableCell className="text-end px-8" onClick={() => dispatch(setSelectedPatient(patient.patient_id))} >
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="icon" className="rounded-xl hover:bg-accent">
@@ -220,7 +225,10 @@ export function PatientsModule({ patients, stats }: { stats: PatientStats, patie
                                                         <Eye className="w-4 h-4 text-primary/60" />
                                                         {t("actions.viewDetails")}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="rounded-xl gap-2 font-bold cursor-pointer">
+                                                    <DropdownMenuItem
+                                                        className="rounded-xl gap-2 font-bold cursor-pointer"
+                                                        onClick={handleOpenForm}
+                                                    >
                                                         <Edit className="w-4 h-4 text-primary/60" />
                                                         {t("actions.editRecord")}
                                                     </DropdownMenuItem>
@@ -259,7 +267,8 @@ export function PatientsModule({ patients, stats }: { stats: PatientStats, patie
             {isFormVisible &&
                 <PatientForm
                     open={isFormVisible}
-                    onOpenChange={handleCloseForm}
+                    onClose={handleCloseForm}
+                    selectedPatient={selectedPatient}
                 />
             }
 

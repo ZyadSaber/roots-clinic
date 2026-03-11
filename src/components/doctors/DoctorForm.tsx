@@ -147,9 +147,8 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
     })
 
     const handleSubmit = async () => {
-        if (validate()) {
-            mutate()
-        }
+        if (!validate()) return
+        mutate()
     }
 
     return (

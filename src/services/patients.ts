@@ -1,90 +1,60 @@
 "use server";
 
-import { pool, queryMany, queryOne } from "@/lib/pg";
+import { execute, pool, queryMany } from "@/lib/pg";
 import {
   InvoiceRecord,
   MedicalAlert,
   PatientDetails,
   PatientSummary,
-  RadiologyAsset,
-  VisitRecord,
   VitalRecord,
 } from "@/types/patients";
 import { revalidatePath } from "next/cache";
+import { type PatientFormValues } from "@/validation/patients";
 
 export async function fetchAllPatients(): Promise<PatientSummary[]> {
-  const sql = `    SELECT * FROM patients_full  `;
+  const sql = `SELECT * FROM patients_full`;
   return (await queryMany({ sql })) as PatientSummary[];
 }
 
 export async function fetchPatientDetails(
   patientId: string,
 ): Promise<PatientDetails | null> {
-  // 1. Get Summary (Base info)
-  const summarySql = `SELECT * FROM patients_full WHERE patient_id = $1`;
-  const summary = (await queryOne({
-    sql: summarySql,
-    params: [patientId],
-  })) as PatientSummary;
-
-  if (!summary) return null;
-
-  // 2. Get Alerts
-  const alertsSql = `SELECT * FROM patient_alerts WHERE patient_id = $1 ORDER BY created_at DESC`;
-  const alerts = (await queryMany({
-    sql: alertsSql,
-    params: [patientId],
-  })) as MedicalAlert[];
-
-  // 3. Get Vitals
-  const vitalsSql = `SELECT * FROM patient_vitals WHERE patient_id = $1 ORDER BY recorded_at DESC`;
-  const vitals = (await queryMany({
-    sql: vitalsSql,
-    params: [patientId],
-  })) as VitalRecord[];
-
-  // 4. Get Visits
-  const visitsSql = `
-    SELECT 
-      vr.*, 
-      s.full_name as doctor_name,
-      sp.english_name as doctor_specialty_en,
-      sp.arabic_name as doctor_specialty_ar,
-      a.procedure_type
-    FROM visit_records vr
-    JOIN doctors d ON vr.doctor_id = d.id
-    JOIN staff s ON d.staff_id = s.id
-    LEFT JOIN specialties sp ON d.specialty_id = sp.id
-    LEFT JOIN appointments a ON vr.appointment_id = a.id
-    WHERE vr.patient_id = $1
-    ORDER BY vr.created_at DESC
-  `;
-  const visitsRaw = (await queryMany({
-    sql: visitsSql,
-    params: [patientId],
-  })) as (VisitRecord & {
-    doctor_specialty_en: string;
-    doctor_specialty_ar: string;
-    procedure_type: string;
-  })[];
-
-  // 5. Get Radiology Assets
-  const assetsSql = `SELECT * FROM radiology_assets WHERE patient_id = $1 ORDER BY taken_at DESC`;
-  const assets = (await queryMany({
-    sql: assetsSql,
-    params: [patientId],
-  })) as (RadiologyAsset & { visit_id: string })[];
-
-  // 6. Get Invoices
-  const invoicesSql = `
-    SELECT * FROM invoices 
-    WHERE patient_id = $1 
-    ORDER BY created_at DESC
-  `;
-  const invoices = (await queryMany({
-    sql: invoicesSql,
-    params: [patientId],
-  })) as InvoiceRecord[];
+  const [alerts, vitals, visitsRaw, assets, invoices] = await Promise.all([
+    queryMany({
+      sql: `SELECT * FROM patient_alerts WHERE patient_id = $1 ORDER BY created_at DESC`,
+      params: [patientId],
+    }),
+    queryMany({
+      sql: `SELECT * FROM patient_vitals WHERE patient_id = $1 ORDER BY recorded_at DESC`,
+      params: [patientId],
+    }),
+    queryMany({
+      sql: `
+          SELECT
+            vr.*,
+            s.full_name        AS doctor_name,
+            sp.english_name    AS doctor_specialty_en,
+            sp.arabic_name     AS doctor_specialty_ar,
+            a.procedure_type
+          FROM visit_records vr
+          JOIN doctors       d  ON vr.doctor_id      = d.id
+          JOIN staff         s  ON d.staff_id         = s.id
+          LEFT JOIN specialties sp ON d.specialty_id  = sp.id
+          LEFT JOIN appointments a ON vr.appointment_id = a.id
+          WHERE vr.patient_id = $1
+          ORDER BY vr.created_at DESC
+        `,
+      params: [patientId],
+    }),
+    queryMany({
+      sql: `SELECT * FROM radiology_assets WHERE patient_id = $1 ORDER BY taken_at DESC`,
+      params: [patientId],
+    }),
+    queryMany({
+      sql: `SELECT * FROM invoices WHERE patient_id = $1 ORDER BY created_at DESC`,
+      params: [patientId],
+    }),
+  ]);
 
   // Attach assets to visits
   const visitsWithAssets = visitsRaw.map((v) => ({
@@ -93,10 +63,10 @@ export async function fetchPatientDetails(
   }));
 
   return {
-    alerts,
-    vitals,
+    alerts: alerts as MedicalAlert[],
+    vitals: vitals as VitalRecord[],
     visits: visitsWithAssets,
-    invoices,
+    invoices: invoices as InvoiceRecord[],
   };
 }
 
@@ -164,5 +134,115 @@ export async function deletePatient(patientId: string) {
     return { success: false, error: "Failed to delete patient." };
   } finally {
     client.release();
+  }
+}
+
+// ================================
+// CREATE PATIENT
+// ================================
+
+export async function createPatient(formData: PatientFormValues) {
+  try {
+    await execute({
+      sql: `INSERT INTO patients (
+        full_name,
+        phone,
+        email,
+        gender,
+        address,
+        emergency_contact_name,
+        emergency_contact_phone,
+        insurance_provider,
+        insurance_number,
+        notes
+      ) VALUES (
+        $1, 
+        $2, 
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11
+      )`,
+      params: [
+        formData.full_name,
+        formData.phone,
+        formData.email || "",
+        formData.gender || "",
+        formData.address || "",
+        formData.emergency_contact_name || "",
+        formData.emergency_contact_phone || "",
+        formData.insurance_provider || "",
+        formData.insurance_number || "",
+        formData.notes || "",
+        formData.dob || "",
+      ],
+    });
+
+    revalidatePath("/patients");
+
+    return { success: true };
+  } catch (err) {
+    console.error("[createPatient]", err);
+    return {
+      success: false,
+      error: "Failed to create patient. Please try again.",
+    };
+  }
+}
+
+// ================================
+// UPDATE PATIENT
+// ================================
+
+export async function updatePatient(
+  patientId: string,
+  formData: PatientFormValues,
+) {
+  try {
+    await execute({
+      sql: `UPDATE patients SET
+        full_name               = $1,
+        phone                   = $2,
+        email                   = $3,
+        gender                  = $4,
+        address                 = $5,
+        emergency_contact_name  = $6,
+        emergency_contact_phone = $7,
+        insurance_provider      = $8,
+        insurance_number        = $9,
+        notes                   = $10,
+        updated_at              = NOW(),
+        dob                     = $12
+      WHERE id = $11`,
+      params: [
+        formData.full_name,
+        formData.phone,
+        formData.email || "",
+        formData.gender || "",
+        formData.address || "",
+        formData.emergency_contact_name || "",
+        formData.emergency_contact_phone || "",
+        formData.insurance_provider || "",
+        formData.insurance_number || "",
+        formData.notes || "",
+        patientId,
+        formData.dob || "",
+      ],
+    });
+
+    revalidatePath("/patients");
+
+    return { success: true, patientId };
+  } catch (err) {
+    console.error("[updatePatient]", err);
+    return {
+      success: false,
+      error: "Failed to update patient. Please try again.",
+    };
   }
 }

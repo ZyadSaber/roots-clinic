@@ -26,7 +26,7 @@
     "backToHome": "Back to Home",
     "success": "Success",
     "error": "Error",
-    "users": "Users",
+    "users": "Users & Staff",
     "tables": "Tables",
     "welcomeBack": "Welcome Back",
     "shifts": "Shifts",
@@ -211,8 +211,7 @@
         "insuranceDesc": "Coverage and provider info"
       },
       "fields": {
-        "firstName": "First Name",
-        "lastName": "Last Name",
+        "name": "Full Name",
         "dob": "Date of Birth",
         "age": "Age",
         "gender": "Gender",
@@ -224,11 +223,11 @@
         "condition": "Chief Complaint / Condition",
         "allergies": "Allergies",
         "insuranceProvider": "Insurance Provider",
-        "policyNumber": "Policy Number"
+        "policyNumber": "Policy Number",
+        "notes": "Notes"
       },
       "placeholders": {
-        "firstName": "John",
-        "lastName": "Doe",
+        "name": "Ahmed ALI",
         "age": "e.g. 34",
         "selectGender": "Select gender",
         "phone": "+20 123 456 789",
@@ -239,7 +238,8 @@
         "condition": "e.g. Hypertension",
         "allergies": "List any known allergies...",
         "insuranceProvider": "e.g. Bupa, MetLife",
-        "policyNumber": "e.g. POL-123456"
+        "policyNumber": "e.g. POL-123456",
+        "notes": "Enter any notes or medications"
       },
       "genders": {
         "all": "All",

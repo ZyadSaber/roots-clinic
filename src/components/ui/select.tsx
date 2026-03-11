@@ -197,7 +197,8 @@ export function SelectField<T extends { key: string; label: string }>({
   placeholder,
   renderAddField,
   icon: Icon,
-  hideClear
+  hideClear,
+  className,
 }: {
   label: string;
   options: T[];
@@ -214,7 +215,9 @@ export function SelectField<T extends { key: string; label: string }>({
   placeholder?: string;
   renderAddField?: (onSuccess: (newId: string) => void) => React.ReactNode;
   icon?: LucideIcon;
-  hideClear?: boolean
+  hideClear?: boolean;
+  /** Applied directly to the SelectTrigger element */
+  className?: string;
 }) {
   const [search, setSearch] = React.useState("")
   const { visible, handleClose, handleStateChange } = useVisibility()
@@ -255,8 +258,10 @@ export function SelectField<T extends { key: string; label: string }>({
         }}
         disabled={disabled}
       >
-        <SelectTrigger className={cn("w-full", !!error && "border-destructive")}>
-          <div className="flex items-center gap-2 overflow-hidden">
+        <SelectTrigger
+          className={cn("w-full", !!error && "border-destructive", className)}
+        >
+          <div className="flex items-center gap-2 overflow-hidden h-full">
             {value && (
               <span
                 className="pointer-events-auto cursor-pointer p-0.5 hover:bg-muted rounded-md transition-colors"
@@ -271,6 +276,7 @@ export function SelectField<T extends { key: string; label: string }>({
             )}
             <SelectValue placeholder={placeholder ? placeholder : `Select ${label.toLowerCase()}`} />
           </div>
+
         </SelectTrigger>
         <SelectContent
           position="popper"

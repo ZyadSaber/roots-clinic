@@ -5,25 +5,25 @@ export interface PatientSummary {
   patient_id: string;
   patient_code: string;
   full_name: string;
-  gender: "male" | "female";
+  gender: "male" | "female" | "";
   dob: string;
   age: number;
 
   // Contact
   phone: string;
-  email: string | null;
-  address: string | null;
+  email: string;
+  address: string;
 
   // Emergency
-  emergency_contact_name: string | null;
-  emergency_contact_phone: string | null;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
 
   // Insurance
-  insurance_provider: string | null;
-  insurance_number: string | null;
+  insurance_provider: string;
+  insurance_number: string;
 
   // Meta
-  notes: string | null;
+  notes: string;
   is_active: boolean;
   created_at: string;
 

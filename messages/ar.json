@@ -211,8 +211,7 @@
         "insuranceDesc": "التغطية ومعلومات المزود"
       },
       "fields": {
-        "firstName": "الاسم الأول",
-        "lastName": "اسم العائلة",
+        "name": "الاسم بالكامل",
         "dob": "تاريخ الميلاد",
         "age": "العمر",
         "gender": "الجنس",
@@ -224,11 +223,11 @@
         "condition": "الشكوى الرئيسية / الحالة",
         "allergies": "الحساسية",
         "insuranceProvider": "مزود التأمين",
-        "policyNumber": "رقم البوليصة"
+        "policyNumber": "رقم البوليصة",
+        "notes": "الملاحظات"
       },
       "placeholders": {
-        "firstName": "أحمد",
-        "lastName": "علي",
+        "name": "أحمد علي",
         "age": "مثال: 34",
         "selectGender": "اختر الجنس",
         "phone": "+20 123 456 789",
@@ -239,7 +238,8 @@
         "condition": "مثال: ارتفاع ضغط الدم",
         "allergies": "اذكر أي حساسية معروفة...",
         "insuranceProvider": "مثال: بوبا، متلايف",
-        "policyNumber": "مثال: POL-123456"
+        "policyNumber": "مثال: POL-123456",
+        "notes": "ادخل ملاحظات"
       },
       "genders": {
         "all": "الكل",

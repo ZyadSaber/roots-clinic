@@ -13,8 +13,7 @@ type InputProps = React.ComponentProps<"input"> & {
 function Input({ icon: Icon, className, type, error, name, label, containerClassName, ...props }: InputProps) {
   return (
     <div className={cn("space-y-2 px-1", containerClassName)}>
-      {/* {!!label && <Label htmlFor={name} className={cn("text-sm font-medium", error && "text-destructive")} >{label}</Label>} */}
-      {(Icon || label) && <Label className="text-xs uppercase font-black tracking-widest text-muted-foreground px-1 flex items-center gap-2">
+      {(Icon || label) && <Label htmlFor={name} className="text-xs uppercase font-black tracking-widest text-muted-foreground px-1 flex items-center gap-2">
         {Icon && <Icon className="w-3 h-3" />} {label}
       </Label>}
       <input

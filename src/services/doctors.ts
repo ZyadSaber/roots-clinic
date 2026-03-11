@@ -112,8 +112,6 @@ export async function createDoctor(data: DoctorFormData) {
           return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5})`;
         });
 
-        console.log(schedule, placeholders, values);
-
         await client.query(
           `INSERT INTO doctor_schedules
           (doctor_id, day_of_week, start_time, end_time, is_active)
