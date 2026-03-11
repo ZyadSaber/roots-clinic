@@ -196,7 +196,8 @@ export function SelectField<T extends { key: string; label: string }>({
   preSelectFirstKey = false,
   placeholder,
   renderAddField,
-  icon: Icon
+  icon: Icon,
+  hideClear
 }: {
   label: string;
   options: T[];
@@ -213,6 +214,7 @@ export function SelectField<T extends { key: string; label: string }>({
   placeholder?: string;
   renderAddField?: (onSuccess: (newId: string) => void) => React.ReactNode;
   icon?: LucideIcon;
+  hideClear?: boolean
 }) {
   const [search, setSearch] = React.useState("")
   const { visible, handleClose, handleStateChange } = useVisibility()
@@ -264,7 +266,7 @@ export function SelectField<T extends { key: string; label: string }>({
                   onValueChange("")
                 }}
               >
-                <X className="size-3.5 opacity-50 hover:opacity-100" />
+                {!hideClear && <X className="size-3.5 opacity-50 hover:opacity-100" />}
               </span>
             )}
             <SelectValue placeholder={placeholder ? placeholder : `Select ${label.toLowerCase()}`} />

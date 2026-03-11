@@ -156,6 +156,174 @@
       "Friday": "الجمعة",
       "Saturday": "السبت",
       "Sunday": "الأحد"
+    },
+    "noSchedule": "لا يوجد جدول زمني منتظم متاح."
+  },
+  "Patients": {
+    "pageTitle": "إدارة المرضى",
+    "pageDescription": "عرض وإدارة السجلات السريرية وتاريخ المرضى.",
+    "addPatient": "إضافة مريض",
+    "searchPlaceholder": "البحث عن المرضى بالاسم، المعرف، الحالة...",
+    "totalPatients": "إجمالي المرضى",
+    "newThisMonth": "جديد هذا الشهر",
+    "insured": "مؤمن عليهم",
+    "critical": "حرج",
+    "patientRecords": "سجلات المرضى",
+    "table": {
+      "patient": "المريض",
+      "id": "المعرف",
+      "contact": "الاتصال",
+      "ageGender": "العمر/الجنس",
+      "condition": "الحالة",
+      "status": "الحالة",
+      "lastVisit": "أخر زيارة",
+      "actions": "الإجراءات"
+    },
+    "actions": {
+      "viewDetails": "عرض التفاصيل",
+      "editRecord": "تعديل السجل",
+      "medicalHistory": "التاريخ الطبي",
+      "bookAppointment": "حجز موعد",
+      "deleteRecord": "حذف السجل"
+    },
+    "statuses": {
+      "active": "نشط",
+      "critical": "حرج",
+      "recovered": "تم الشفاء"
+    },
+    "form": {
+      "registerTitle": "تسجيل مريض جديد",
+      "registerDesc": "أكمل جميع الأقسام لإنشاء سجل مريض كامل",
+      "steps": {
+        "personal": "شخصي",
+        "contact": "الاتصال",
+        "medical": "طبي",
+        "insurance": "التأمين"
+      },
+      "sections": {
+        "personalInfo": "المعلومات الشخصية",
+        "personalDesc": "تفاصيل الهوية الأساسية",
+        "contactDetails": "تفاصيل الاتصال",
+        "contactDesc": "الهاتف والبريد الإلكتروني والعنوان",
+        "medicalInfo": "المعلومات الطبية",
+        "medicalDesc": "التاريخ الصحي والحالات",
+        "insuranceDetails": "تفاصيل التأمين",
+        "insuranceDesc": "التغطية ومعلومات المزود"
+      },
+      "fields": {
+        "firstName": "الاسم الأول",
+        "lastName": "اسم العائلة",
+        "dob": "تاريخ الميلاد",
+        "age": "العمر",
+        "gender": "الجنس",
+        "phone": "الهاتف",
+        "email": "البريد الإلكتروني",
+        "address": "العنوان",
+        "emergencyContact": "جهة الاتصال في حالات الطوارئ",
+        "bloodType": "فصيلة الدم",
+        "condition": "الشكوى الرئيسية / الحالة",
+        "allergies": "الحساسية",
+        "insuranceProvider": "مزود التأمين",
+        "policyNumber": "رقم البوليصة"
+      },
+      "placeholders": {
+        "firstName": "أحمد",
+        "lastName": "علي",
+        "age": "مثال: 34",
+        "selectGender": "اختر الجنس",
+        "phone": "+20 123 456 789",
+        "email": "patient@email.com",
+        "address": "الشارع، المدينة، الدولة، الرمز البريدي",
+        "emergencyContact": "الاسم — +20 123 456 789",
+        "selectBlood": "اختر فصيلة الدم",
+        "condition": "مثال: ارتفاع ضغط الدم",
+        "allergies": "اذكر أي حساسية معروفة...",
+        "insuranceProvider": "مثال: بوبا، متلايف",
+        "policyNumber": "مثال: POL-123456"
+      },
+      "genders": {
+        "all": "الكل",
+        "male": "ذكر",
+        "female": "أنثى"
+      },
+      "buttons": {
+        "next": "التالي",
+        "back": "السابق",
+        "register": "تسجيل المريض",
+        "saving": "جاري الحفظ..."
+      },
+      "summary": "ملخص"
+    },
+    "details": {
+      "yearsOld": "عاماً",
+      "criticalAlertDetected": "تم اكتشاف تنبيه حرج — رعاية طبية ذات أولوية قصوى",
+      "noMedicalFlags": "لا توجد ملاحظات طبية أو حساسية مسجلة.",
+      "noDiagnosis": "لا يوجد تشخيص مسجل.",
+      "noProcedure": "لا يوجد إجراء مكبر مسجل.",
+      "noPrescription": "لا توجد روشتة مسجلة.",
+      "noVisits": "لا يوجد سجل زيارات",
+      "noVisitsDesc": "هذا المريض لم يتم تسجيل أي زيارات له بعد.",
+      "tabs": {
+        "overview": "نظرة عامة",
+        "medical": "البيانات الطبية",
+        "visits": "سجل الزيارات",
+        "financial": "البيانات المالية"
+      },
+      "sections": {
+        "contact": "معلومات الاتصال",
+        "emergency": "الاتصال في الطوارئ",
+        "insurance": "بوليصة التأمين",
+        "medicalFlags": "التنبيهات والملاحظات الطبية",
+        "billingHistory": "سجل الفواتير"
+      },
+      "labels": {
+        "phone": "رقم الهاتف",
+        "email": "البريد الإلكتروني",
+        "address": "عنوان المنزل",
+        "emergencyName": "اسم جهة الاتصال",
+        "emergencyPhone": "رقم هاتف الطوارئ",
+        "provider": "مزود التأمين",
+        "insuranceNumber": "رقم البوليصة",
+        "bloodPressure": "ضغط الدم",
+        "heartRate": "نبض القلب",
+        "temperature": "درجة الحرارة",
+        "weight": "الوزن",
+        "diagnosis": "التشخيص",
+        "procedure": "الإجراء المنفذ",
+        "prescription": "الروشتة / العلاج",
+        "followUp": "المتابعة القادمة",
+        "totalBilled": "إجمالي الفواتير",
+        "totalPaid": "إجمالي المدفوع",
+        "outstanding": "المتبقي",
+        "invoiceCount": "عدد الفواتير",
+        "invoiceNumber": "رقم الفاتورة",
+        "date": "التاريخ",
+        "status": "الحالة",
+        "total": "المبلغ"
+      },
+      "actions": {},
+      "noInvoices": "لا توجد فواتير مسجلة لهذا المريض.",
+      "medicalHistory": {
+        "title": "السجل الطبي",
+        "summary": "الجدول الزمني السريري",
+        "noHistory": "لا يوجد سجل طبي متاح.",
+        "noHistoryDesc": "هذا المريض ليس لديه زيارات مسجلة حتى الآن.",
+        "overdue": "متأخر",
+        "expandXrays": "عرض الأشعة ({count})",
+        "collapseXrays": "إخفاء الأشعة",
+        "noXrays": "لا توجد صور أشعة لهذه الزيارة.",
+        "exportPdf": "تصدير التقرير الطبي",
+        "exporting": "جاري إنشاء PDF...",
+        "labels": {
+          "treatedBy": "تم العلاج بواسطة",
+          "procedureType": "نوع الإجراء",
+          "diagnosis": "التشخيص",
+          "performed": "الإجراء المنفذ",
+          "notes": "الملاحظات",
+          "prescription": "الروشتة",
+          "followUp": "موعد المتابعة"
+        }
+      }
     }
   }
 }

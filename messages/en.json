@@ -158,5 +158,172 @@
       "Sunday": "Sunday"
     },
     "noSchedule": "No regular schedule available."
+  },
+  "Patients": {
+    "pageTitle": "Patient Management",
+    "pageDescription": "View and manage patient clinical records and history.",
+    "addPatient": "Add Patient",
+    "searchPlaceholder": "Search patients by name, ID, condition...",
+    "totalPatients": "Total Patients",
+    "newThisMonth": "New This Month",
+    "insured": "insured",
+    "critical": "Critical",
+    "patientRecords": "Patient Records",
+    "table": {
+      "patient": "Patient",
+      "id": "ID",
+      "contact": "Contact",
+      "ageGender": "Age/Gender",
+      "condition": "Condition",
+      "status": "Status",
+      "lastVisit": "Last Visit",
+      "actions": "Actions"
+    },
+    "actions": {
+      "viewDetails": "View Details",
+      "editRecord": "Edit Record",
+      "medicalHistory": "Medical History",
+      "bookAppointment": "Book Appointment",
+      "deleteRecord": "Delete Record"
+    },
+    "statuses": {
+      "active": "Active",
+      "critical": "Critical",
+      "recovered": "Recovered"
+    },
+    "form": {
+      "registerTitle": "Register New Patient",
+      "registerDesc": "Complete all sections to create a full patient record",
+      "steps": {
+        "personal": "Personal",
+        "contact": "Contact",
+        "medical": "Medical",
+        "insurance": "Insurance"
+      },
+      "sections": {
+        "personalInfo": "Personal Information",
+        "personalDesc": "Basic identity details",
+        "contactDetails": "Contact Details",
+        "contactDesc": "Phone, email and address",
+        "medicalInfo": "Medical Information",
+        "medicalDesc": "Health history and conditions",
+        "insuranceDetails": "Insurance Details",
+        "insuranceDesc": "Coverage and provider info"
+      },
+      "fields": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "dob": "Date of Birth",
+        "age": "Age",
+        "gender": "Gender",
+        "phone": "Phone",
+        "email": "Email",
+        "address": "Address",
+        "emergencyContact": "Emergency Contact",
+        "bloodType": "Blood Type",
+        "condition": "Chief Complaint / Condition",
+        "allergies": "Allergies",
+        "insuranceProvider": "Insurance Provider",
+        "policyNumber": "Policy Number"
+      },
+      "placeholders": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "age": "e.g. 34",
+        "selectGender": "Select gender",
+        "phone": "+20 123 456 789",
+        "email": "patient@email.com",
+        "address": "Street, City, State, ZIP",
+        "emergencyContact": "Name — +20 123 456 789",
+        "selectBlood": "Select blood type",
+        "condition": "e.g. Hypertension",
+        "allergies": "List any known allergies...",
+        "insuranceProvider": "e.g. Bupa, MetLife",
+        "policyNumber": "e.g. POL-123456"
+      },
+      "genders": {
+        "all": "All",
+        "male": "Male",
+        "female": "Female"
+      },
+      "buttons": {
+        "next": "Next",
+        "back": "Back",
+        "register": "Register Patient",
+        "saving": "Saving..."
+      },
+      "summary": "Summary"
+    },
+    "details": {
+      "yearsOld": "years old",
+      "criticalAlertDetected": "Critical Alert Detected — High Priority Care Required",
+      "noMedicalFlags": "No medical flags or allergies recorded.",
+      "noDiagnosis": "No diagnosis recorded.",
+      "noProcedure": "No procedure recorded.",
+      "noPrescription": "No prescription recorded.",
+      "noVisits": "No Visit History",
+      "noVisitsDesc": "This patient hasn't had any recorded visits yet.",
+      "tabs": {
+        "overview": "Overview",
+        "medical": "Medical & Vitals",
+        "visits": "Visit History",
+        "financial": "Financials"
+      },
+      "sections": {
+        "contact": "Contact Information",
+        "emergency": "Emergency Contact",
+        "insurance": "Insurance Policy",
+        "medicalFlags": "Medical Flags & Alerts",
+        "billingHistory": "Billing History"
+      },
+      "labels": {
+        "phone": "Phone Number",
+        "email": "Email Address",
+        "address": "Home Address",
+        "emergencyName": "Contact Name",
+        "emergencyPhone": "Contact Phone",
+        "provider": "Insurance Provider",
+        "insuranceNumber": "Policy Number",
+        "bloodPressure": "Blood Pressure",
+        "heartRate": "Heart Rate",
+        "temperature": "Temperature",
+        "weight": "Weight",
+        "diagnosis": "Diagnosis",
+        "procedure": "Procedure Done",
+        "prescription": "Prescription",
+        "followUp": "Follow-up",
+        "totalBilled": "Total Billed",
+        "totalPaid": "Total Paid",
+        "outstanding": "Outstanding",
+        "invoiceCount": "Invoices",
+        "invoiceNumber": "Invoice #",
+        "date": "Date",
+        "status": "Status",
+        "total": "Amount"
+      },
+      "actions": {},
+      "noInvoices": "No invoices recorded for this patient.",
+      "medicalHistory": {
+        "title": "Medical History",
+        "summary": "Clinical Timeline",
+        "noHistory": "No clinical history found.",
+        "noHistoryDesc": "This patient has no recorded visits yet.",
+        "overdue": "Overdue",
+        "expandXrays": "View X-rays ({count} scans)",
+        "collapseXrays": "Hide X-rays",
+        "noXrays": "No X-ray images recorded for this visit.",
+        "exportPdf": "Export Medical Report",
+        "exporting": "Generating PDF...",
+        "labels": {
+          "treatedBy": "Treated by",
+          "procedureType": "Procedure Type",
+          "diagnosis": "Diagnosis",
+          "performed": "Procedure Performed",
+          "notes": "Notes",
+          "prescription": "Prescription",
+          "followUp": "Follow-up Date"
+        }
+      }
+    }
   }
 }
