@@ -1,4 +1,24 @@
 {
+  "Routes": {
+    "doctorsTitle": "إدارة الأطباء",
+    "doctorsDesc": "عرض وإدارة الطاقم الطبي المهني وتخصصاتهم.",
+    "patientsTitle": "إدارة المرضى",
+    "patientsDesc": "عرض وإدارة السجلات السريرية وتاريخ المرضى.",
+    "usersTitle": "إدارة المستخدمين",
+    "usersDesc": "عرض وإدارة سجلات المستخدمين والموظفين.",
+    "dashboardTitle": "لوحة القيادة",
+    "dashboardDesc": "نظرة عامة على العيادة والتحليلات في الوقت الفعلي",
+    "appointmentsTitle": "المواعيد",
+    "appointmentsDesc": "إدارة مواعيد وحجوزات المرضى",
+    "radiologyTitle": "أشعة",
+    "radiologyDesc": "إدارة الصور الطبية والنتائج",
+    "inventoryTitle": "المخزون",
+    "inventoryDesc": "إدارة الإمدادات والمعدات الطبية",
+    "financeTitle": "المالية",
+    "financeDesc": "إدارة التقارير المالية والعمليات المالية",
+    "recordsTitle": "التقارير الطبية",
+    "recordsDesc": "إدارة السجلات الطبية و تاريخ المرضى"
+  },
   "Common": {
     "enName": "الاسم بالانجليزية",
     "id": "مسلسل",
@@ -80,8 +100,6 @@
     "retry": "إعادة المحاولة"
   },
   "Doctors": {
-    "pageTitle": "إدارة الأطباء",
-    "pageDescription": "عرض وإدارة الطاقم الطبي المهني وتخصصاتهم.",
     "addDoctor": "إضافة طبيب جديد",
     "allSpecializations": "جميع التخصصات",
     "fee": "الرسوم",
@@ -160,8 +178,6 @@
     "noSchedule": "لا يوجد جدول زمني منتظم متاح."
   },
   "Patients": {
-    "pageTitle": "إدارة المرضى",
-    "pageDescription": "عرض وإدارة السجلات السريرية وتاريخ المرضى.",
     "addPatient": "إضافة مريض",
     "searchPlaceholder": "البحث عن المرضى بالاسم، المعرف، الحالة...",
     "totalPatients": "إجمالي المرضى",
@@ -325,5 +341,28 @@
         }
       }
     }
+  },
+  "Users": {
+    "addUser": "إضافة مستخدم",
+    "permissions": "الصلاحيات",
+    "permissionsDesc": "تعديل صلاحيات المستخدم",
+    "user": "مستخدم",
+    "role": "دور",
+    "department": "قسم",
+    "lastActive": "آخر نشاط",
+    "status": "الحالة",
+    "actions": "الإجراءات",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "editUser": "تعديل المستخدم",
+    "resetPassword": "إعادة ضبط كلمة المرور",
+    "deactivateUser": "إلغاء تنشيط المستخدم",
+    "never": "أبداً",
+    "admin": "مدير",
+    "doctor": "طبيب",
+    "receptionist": "موظف استقبال",
+    "finance": "مالية",
+    "all": "الكل",
+    "editPermissions": "تعديل الصلاحيات"
   }
 }

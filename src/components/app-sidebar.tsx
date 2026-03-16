@@ -49,7 +49,7 @@ import { RootState } from "@/store/store"
 import { cn } from "@/lib/utils"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const t = useTranslations("Common")
+    const tNav = useTranslations("Routes")
     const pathname = usePathname()
     const { user, loading } = useSelector((state: RootState) => state.auth)
 
@@ -72,13 +72,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     <SidebarMenuButton
                                         asChild
                                         isActive={isActive}
-                                        tooltip={t(item.labelKey)}
+                                        tooltip={tNav(item.labelKey)}
                                         className="h-10 px-3 rounded-lg transition-all data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
                                     >
                                         <Link href={item.href} className="flex items-center justify-between w-full">
                                             <div className="flex items-center gap-2.5">
                                                 <Icon className="w-5 h-5" />
-                                                <span className="text-sm font-medium">{t(item.labelKey)}</span>
+                                                <span className="text-sm font-medium">{tNav(item.labelKey)}</span>
                                             </div>
                                             {item.hasCount && <Badge
                                                 variant="secondary"

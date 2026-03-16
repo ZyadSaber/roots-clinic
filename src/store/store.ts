@@ -3,6 +3,7 @@ import uiSharedReducer from "./slices/uiSharedSlice";
 import authReducer from "./slices/authSlice";
 import doctorsReducer from "./slices/doctorsSlice";
 import patientsReducer from "./slices/patientSlice";
+import staffReducer from "./slices/staff";
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     auth: authReducer,
     doctors: doctorsReducer,
     patients: patientsReducer,
+    staff: staffReducer,
   },
 });
 

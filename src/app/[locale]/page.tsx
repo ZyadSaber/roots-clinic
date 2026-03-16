@@ -8,8 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Lock } from "lucide-react"
 import Logo from "@/components/logo"
 import { useFormManager } from "@/hooks"
-import { supabase } from "@/lib/supabase"
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { loginWithUsername } from "@/services/login"

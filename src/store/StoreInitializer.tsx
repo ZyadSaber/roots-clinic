@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import { useDispatch } from "react-redux"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { setCredentials, AuthUser } from "@/store/slices/authSlice"
 import { User as SupabaseUser } from "@supabase/supabase-js"
@@ -13,6 +14,7 @@ export default function StoreInitializer({
     initialUser: SupabaseUser | null
 }) {
     const dispatch = useDispatch()
+    const router = useRouter()
     const supabase = createClient()
 
     useEffect(() => {
@@ -22,7 +24,6 @@ export default function StoreInitializer({
                 return
             }
 
-            // Start with Supabase data
             let staffData: AuthUser = {
                 id: user.id,
                 username: "",
@@ -32,7 +33,6 @@ export default function StoreInitializer({
                 avatar_url: ""
             }
 
-            // Try to enhance with real database data from staff table
             try {
                 const dbStaff = await getStaffById(user.id || "")
                 if (dbStaff) {
@@ -55,15 +55,25 @@ export default function StoreInitializer({
             syncStaffData(initialUser)
         }
 
-        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (['INITIAL_SESSION', 'TOKEN_REFRESHED', 'USER_UPDATED'].includes(event)) {
-                syncStaffData(session?.user || null)
+                if (!session) {
+                    // session expired or user is logged out
+                    dispatch(setCredentials(null))
+                    router.push("/")
+                    return
+                }
+                syncStaffData(session.user)
+            }
+
+            if (event === 'SIGNED_OUT') {
+                dispatch(setCredentials(null))
+                router.push("/")
             }
         })
 
         return () => subscription.unsubscribe()
-    }, [dispatch, initialUser, supabase.auth])
+    }, [dispatch, initialUser, supabase.auth, router])
 
     return null
 }

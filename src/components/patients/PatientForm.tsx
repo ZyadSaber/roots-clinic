@@ -97,9 +97,6 @@ export function PatientForm({ open, onClose, selectedPatient }: AddPatientModule
         schema: patientFormSchema
     })
 
-
-    console.log(errors, formData)
-
     const handleDobChange = (dob: Date) => {
         const age = calculateAge(dob)
         handleChangeMultiInputs({

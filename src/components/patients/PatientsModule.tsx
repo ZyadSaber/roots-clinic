@@ -53,9 +53,9 @@ interface PatientsModuleProps {
 }
 
 export function PatientsModule({ patients, stats }: PatientsModuleProps) {
-    const t = useTranslations("Patients")
+    const t = useTranslations("Users")
     const tc = useTranslations("Common")
-    const tForm = useTranslations("Patients.form")
+    const tForm = useTranslations("Users.form")
     const dispatch = useDispatch()
     const selectedPatientId = useSelector((state: RootState) => state.patients.selectedPatientId)
     const selectedPatient = patients.find(d => d.patient_id === selectedPatientId);

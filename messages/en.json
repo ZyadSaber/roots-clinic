@@ -1,21 +1,38 @@
 {
+  "Routes": {
+    "doctorsTitle": "Doctor",
+    "doctorsDesc": "View and manage your professional clinical staff and their specialties.",
+    "patientsTitle": "Patient",
+    "patientsDesc": "View and manage patient clinical records and history.",
+    "usersTitle": "Users & staff",
+    "usersDesc": "View and manage users & staff records and history.",
+    "dashboardTitle": "Dashboard",
+    "dashboardDesc": "Real-time clinic overview and analytics",
+    "appointmentsTitle": "Appointments",
+    "appointmentsDesc": "Manage patient appointments and bookings",
+    "radiologyTitle": "Radiology",
+    "radiologyDesc": "Manage patient radiology and bookings",
+    "inventoryTitle": "Inventory",
+    "inventoryDesc": "Manage inventory and stock levels",
+    "financeTitle": "Finance",
+    "financeDesc": "Manage financial records and transactions",
+    "recordsTitle": "Medical Records",
+    "recordsDesc": "Manage medical records and patient history"
+  },
+  "Auth": {
+    "login": "Login",
+    "userName": "Username",
+    "password": "Password",
+    "logout": "Logout",
+    "signIn": "Sign In"
+  },
   "Common": {
     "enName": "English name",
     "id": "ID",
     "arName": "Arabic name",
     "records": "Medical Records",
     "recordsDesc": "",
-    "staff": "Staff",
-    "staffDesc": "Manage staff accounts and permissions",
-    "appointments": "Appointments",
     "title": "SmartDine POS",
-    "home": "Home",
-    "dashboard": "Dashboard",
-    "pos": "POS",
-    "menu": "Menu",
-    "reservations": "Reservations",
-    "reports": "Reports",
-    "settings": "Settings",
     "logout": "Logout",
     "save": "Save",
     "cancel": "Cancel",
@@ -26,10 +43,7 @@
     "backToHome": "Back to Home",
     "success": "Success",
     "error": "Error",
-    "users": "Users & Staff",
-    "tables": "Tables",
     "welcomeBack": "Welcome Back",
-    "shifts": "Shifts",
     "notes": "Notes",
     "back": "Back",
     "action": "Action",
@@ -42,17 +56,7 @@
     "usersDesc": "Manage staff accounts and permissions",
     "reportsDesc": "Detailed financial and clinic reports",
     "settingsDesc": "Clinic configuration and system settings",
-    "homeDesc": "Back to the landing page",
-    "patients": "Patients",
-    "patientsDesc": "Manage patient records and clinical history",
-    "doctors": "Doctors",
-    "doctorsDesc": "Manage clinic medical staff and schedules",
-    "inventory": "Inventory",
-    "inventoryDesc": "Track medical supplies and equipment",
-    "radiology": "Radiology",
-    "radiologyDesc": "Medical imaging and results management",
-    "finance": "Finance",
-    "financeDesc": "Revenue, expenses and financial reports"
+    "homeDesc": "Back to the landing page"
   },
   "Errors": {
     "notFound": {
@@ -80,8 +84,6 @@
     "retry": "Try Again"
   },
   "Doctors": {
-    "pageTitle": "Doctor Management",
-    "pageDescription": "View and manage your professional clinical staff and their specialties.",
     "addDoctor": "Add New Doctor",
     "allSpecializations": "All Specializations",
     "fee": "Fee",
@@ -160,8 +162,6 @@
     "noSchedule": "No regular schedule available."
   },
   "Patients": {
-    "pageTitle": "Patient Management",
-    "pageDescription": "View and manage patient clinical records and history.",
     "addPatient": "Add Patient",
     "searchPlaceholder": "Search patients by name, ID, condition...",
     "totalPatients": "Total Patients",
@@ -325,5 +325,28 @@
         }
       }
     }
+  },
+  "Users": {
+    "addUser": "Add User",
+    "permissions": "Permissions",
+    "permissionsDesc": "Configure default permissions for each role",
+    "user": "User",
+    "role": "Role",
+    "department": "Department",
+    "lastActive": "Last Active",
+    "status": "Status",
+    "actions": "Actions",
+    "active": "Active",
+    "inactive": "Inactive",
+    "editUser": "Edit User",
+    "resetPassword": "Reset Password",
+    "deactivateUser": "Deactivate User",
+    "never": "Never",
+    "admin": "Admin",
+    "doctor": "Doctor",
+    "receptionist": "Receptionist",
+    "finance": "Finance",
+    "all": "All",
+    "editPermissions": "Edit Permissions"
   }
 }
