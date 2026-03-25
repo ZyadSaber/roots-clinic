@@ -93,6 +93,7 @@ const useFormManager = <T extends object>({
     handleToggle,
     handleFieldChange,
     handleChangeMultiInputs,
+    setErrors,
   };
 };
 

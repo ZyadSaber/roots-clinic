@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon, LucideIcon, X } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon, LucideIcon, X, Loader2 } from "lucide-react"
 import { Label } from "@/components/ui/label";
 
 import { cn } from "@/lib/utils"
@@ -40,7 +40,9 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "border-input data-placeholder:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "border-input data-placeholder:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        size === "default" && "h-9",
+        size === "sm" && "h-8",
         className
       )}
       {...props}
@@ -181,7 +183,9 @@ function SelectScrollDownButton({
   )
 }
 
-export function SelectField<T extends { key: string; label: string }>({
+export interface SelectOptions { key: string; label: string }
+
+export function SelectField<T extends SelectOptions>({
   label,
   options,
   value,
@@ -199,6 +203,7 @@ export function SelectField<T extends { key: string; label: string }>({
   icon: Icon,
   hideClear,
   className,
+  loading = false,
 }: {
   label: string;
   options: T[];
@@ -218,6 +223,7 @@ export function SelectField<T extends { key: string; label: string }>({
   hideClear?: boolean;
   /** Applied directly to the SelectTrigger element */
   className?: string;
+  loading?: boolean;
 }) {
   const [search, setSearch] = React.useState("")
   const { visible, handleClose, handleStateChange } = useVisibility()
@@ -244,7 +250,7 @@ export function SelectField<T extends { key: string; label: string }>({
 
   return (
     <div className={cn("space-y-2 px-1", containerClassName)}>
-      <Label className="text-xs uppercase font-black tracking-widest text-muted-foreground px-1 flex items-center gap-2">
+      <Label htmlFor={name} className="text-xs uppercase font-black tracking-widest text-muted-foreground px-1 flex items-center gap-2">
         {Icon && <Icon className="w-3 h-3" />} {label}
       </Label>
       <Select
@@ -259,7 +265,7 @@ export function SelectField<T extends { key: string; label: string }>({
         disabled={disabled}
       >
         <SelectTrigger
-          className={cn("w-full", !!error && "border-destructive", className)}
+          className={cn("w-full h-9", !!error && "border-destructive", className)}
         >
           <div className="flex items-center gap-2 overflow-hidden h-full">
             {value && (
@@ -301,7 +307,11 @@ export function SelectField<T extends { key: string; label: string }>({
             </div>
           ) : null}
         >
-          {filteredOptions?.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center p-6">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filteredOptions?.length > 0 ? (
             filteredOptions.map((option, index) => (
               <SelectItem key={index} value={option.key}>{option.label}</SelectItem>
             ))
@@ -312,7 +322,7 @@ export function SelectField<T extends { key: string; label: string }>({
           )}
         </SelectContent>
       </Select>
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {!!error && <p className="text-destructive text-sm px-3">{error}</p>}
     </div>
   )
 }

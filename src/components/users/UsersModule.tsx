@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -29,21 +30,20 @@ import {
     Trash2,
     Key,
 } from "lucide-react"
-import { useTranslations, useLocale } from "next-intl"
+import { useTranslations } from "next-intl"
 import { User } from "@/types/staff"
 import { MANAGEMENT_NAV_ITEMS } from "@/constants/navigation"
-import { getLocalizedValue } from "@/lib/localize"
 import { RootState } from "@/store/store"
 import { useDispatch, useSelector } from "react-redux"
 import { SelectField } from "../ui/select"
 import { setStatusFilter, setRoleFilter, UsersFilter, setSelectedUserId } from "@/store/slices/staff"
-import { useMemo, useState } from "react"
-import { selectSelectedStaff } from "@/store/selectors/staffSelector"
 import { Module } from "@/types/navigation"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { updateUserPermissions } from "@/services/staff"
+import { deleteUser, updateUserPermissions } from "@/services/staff"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import AddUserDialog from "./AddUserDialog"
+import { useVisibility } from "@/hooks"
 
 const roleColors: Record<string, string> = {
     admin: "bg-destructive/20 text-destructive",
@@ -61,11 +61,11 @@ const roleIcons: Record<string, React.ReactNode> = {
 
 const UsersModule = ({ staff }: { staff: User[] }) => {
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
+    const { visible, handleStateChange, handleClose, handleOpen } = useVisibility()
 
     const tCommon = useTranslations("Common")
     const t = useTranslations("Users")
     const tNav = useTranslations("Routes")
-    const locale = useLocale();
     const dispatch = useDispatch()
 
     const status = useSelector((state: RootState) => state.staff.filter.status)
@@ -83,12 +83,12 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
             updateUserPermissions(selectedUser!.id, selectedUser!.permissions),
         onSuccess: (res) => {
             if (!res || !res.success) {
-                return toast.error(t("error"))
+                return toast.error(tCommon("error"))
             }
             queryClient.invalidateQueries({ queryKey: ['staff'] })
-            toast.success(t("success"))
+            toast.success(tCommon("success"))
         },
-        onError: () => toast.error(t("error"))
+        onError: () => toast.error(tCommon("error"))
     })
 
     const handleTogglePermission = (moduleId: Module) => (checked: boolean) => {
@@ -120,7 +120,22 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
         { key: "finance", label: t("finance") },
     ]
 
+    const { mutate: deleteStaff, isPending: isDeleting } = useMutation({
+        mutationFn: (id: string) => deleteUser(id),
+        onSuccess: (res) => {
+            if (!res || !res.success) {
+                toast.error(tCommon("error"))
+                return;
+            }
+            queryClient.invalidateQueries({ queryKey: ['staff'] })
+            toast.success(tCommon("success"))
+        },
+        onError: () => toast.error(tCommon("error"))
+    })
 
+    const handleDelete = (id: string) => () => {
+        deleteStaff(id)
+    }
 
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col space-y-6 p-8 overflow-hidden">
@@ -151,21 +166,25 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                         value={role}
                         hideClear
                     />
-                    <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Button
+                        onClick={handleOpen}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-6 h-12 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+                    >
                         <Plus className="w-4 h-4 mr-2" />
                         {t("addUser")}
                     </Button>
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Users Table */}
-                <div className="lg:col-span-2 flex flex-col min-h-0 bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="lg:col-span-3 flex flex-col min-h-0 bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                     <div className="flex-1 overflow-auto">
                         <Table>
                             <TableHeader className="sticky top-0 bg-card z-10 shadow-sm">
                                 <TableRow className="border-border hover:bg-transparent">
                                     <TableHead className="text-muted-foreground text-start">{t("user")}</TableHead>
+                                    <TableHead className="text-muted-foreground text-start">{t("phone")}</TableHead>
                                     <TableHead className="text-muted-foreground text-start">{t("role")}</TableHead>
                                     <TableHead className="text-muted-foreground hidden md:table-cell text-start">{t("department")}</TableHead>
                                     <TableHead className="text-muted-foreground hidden lg:table-cell text-start">{t("lastActive")}</TableHead>
@@ -188,9 +207,12 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                                                 </Avatar>
                                                 <div>
                                                     <p className="font-medium text-foreground">{user.full_name}</p>
-                                                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                                                    <p className="text-xs text-muted-foreground">{user.email ? user.username : ""}</p>
                                                 </div>
                                             </div>
+                                        </TableCell>
+                                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                                            {user.phone}
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={roleColors[user.role]}>
@@ -201,7 +223,7 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell text-muted-foreground">
-                                            {getLocalizedValue({ en: user.english_specialty, ar: user.arabic_specialty }, locale)}
+                                            {user.specialty}
                                         </TableCell>
                                         <TableCell className="hidden lg:table-cell text-muted-foreground">
                                             {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : t("never")}
@@ -233,7 +255,7 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                                                         <Key className="w-4 h-4 mr-2" />
                                                         {t("resetPassword")}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive">
+                                                    <DropdownMenuItem className="text-destructive" onClick={handleDelete(user.id)} disabled={isDeleting}>
                                                         <Trash2 className="w-4 h-4 mr-2" />
                                                         {t("deactivateUser")}
                                                     </DropdownMenuItem>
@@ -260,7 +282,7 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                         <Button
                             variant="outline"
                             onClick={() => mutate()}
-                            disabled={loading}
+                            disabled={loading || !selectedUser}
                         >
                             {t("editPermissions")}
                         </Button>
@@ -284,6 +306,12 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                     </CardContent>
                 </Card>
             </div>
+
+            {visible && <AddUserDialog
+                open={visible}
+                onOpenChange={handleStateChange}
+                handleClose={handleClose}
+            />}
         </div>
     )
 }

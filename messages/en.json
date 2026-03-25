@@ -56,7 +56,9 @@
     "usersDesc": "Manage staff accounts and permissions",
     "reportsDesc": "Detailed financial and clinic reports",
     "settingsDesc": "Clinic configuration and system settings",
-    "homeDesc": "Back to the landing page"
+    "homeDesc": "Back to the landing page",
+    "continue": "Continue",
+    "confirm": "Confirm"
   },
   "Errors": {
     "notFound": {
@@ -347,6 +349,42 @@
     "receptionist": "Receptionist",
     "finance": "Finance",
     "all": "All",
-    "editPermissions": "Edit Permissions"
+    "editPermissions": "Edit Permissions",
+    "fullName": "Full Name",
+    "username": "Username",
+    "email": "Email",
+    "phone": "Phone",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "specialty": "Specialty",
+    "specialtyDesc": "Select the specialty for this user",
+    "specialtyPlaceholder": "Select Specialty",
+    "addUserDesc": "Create a new staff member account and set their access level.",
+    "rolePlaceholder": "Select Access Level",
+    "fullNamePlaceholder": "e.g. Zyad Saber",
+    "usernamePlaceholder": "e.g. zyad123",
+    "emailPlaceholder": "e.g. zyad@rootsclinic.com",
+    "phonePlaceholder": "e.g. +20 123 456 7890",
+    "securitySetup": "Security Setup",
+    "securitySetupDesc": "Set a temporary password for the user.",
+    "passwordHint": "User will be required to change this upon first login.",
+    "permissionNote": "Note: By default, users are created with minimal permissions. You can adjust their module access in the Permissions panel after creation.",
+    "confirmAccount": "Confirm Account",
+    "validation": {
+      "emailInvalid": "Invalid email address",
+      "passwordMin": "Password must be at least 8 characters",
+      "passwordMax": "Password must be under 72 characters",
+      "usernameMin": "Username must be at least 2 characters",
+      "usernameMax": "Username too long",
+      "usernameRegex": "Username can only contain letters, numbers, dots, hyphens, underscores",
+      "fullNameMin": "Full name must be at least 2 characters",
+      "fullNameMax": "Full name too long",
+      "phoneMax": "Phone number too long",
+      "specialtyInvalid": "Invalid specialty",
+      "specialtyRequired": "Specialty is required for doctor accounts",
+      "specialtyOnlyDoctor": "Specialty should only be set for doctor accounts",
+      "staffIdInvalid": "Invalid staff ID",
+      "urlInvalid": "Invalid URL"
+    }
   }
 }

@@ -23,8 +23,7 @@ export interface User {
   email: string;
 
   // from doctors → specialties join (null for non-doctors)
-  english_specialty: string;
-  arabic_specialty: string;
+  specialty: string;
 }
 
 // for the create/invite form (admin creates a new staff member)

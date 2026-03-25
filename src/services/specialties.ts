@@ -1,7 +1,10 @@
 "use server";
 
+import { SelectOptions } from "@/components/ui/select";
+import { SPECIALTY_FIELD } from "@/constants/specilalty";
 import { queryMany, queryOne, execute } from "@/lib/pg";
 import { Specialty } from "@/types/database";
+import { getLocale } from "next-intl/server";
 import { revalidatePath } from "next/cache";
 
 export async function getSpecialties(): Promise<Specialty[]> {
@@ -11,6 +14,18 @@ export async function getSpecialties(): Promise<Specialty[]> {
     ORDER BY english_name ASC
   `;
   return (await queryMany({ sql })) as Specialty[];
+}
+
+export async function getAllSpecialties(): Promise<SelectOptions[]> {
+  const locale = await getLocale();
+  const specialtyField = SPECIALTY_FIELD[locale] ?? "english_name";
+  const sql = `
+    SELECT id AS key,
+    ${specialtyField} AS label
+    FROM specialties
+    ORDER BY ${specialtyField} ASC
+  `;
+  return (await queryMany({ sql })) as SelectOptions[];
 }
 
 export async function createSpecialty(

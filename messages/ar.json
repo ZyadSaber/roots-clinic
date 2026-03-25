@@ -72,7 +72,9 @@
     "radiology": "الأشعة",
     "radiologyDesc": "إدارة الصور الطبية والنتائج",
     "finance": "المالية",
-    "financeDesc": "الإيرادات والمصروفات والتقارير المالية"
+    "financeDesc": "الإيرادات والمصروفات والتقارير المالية",
+    "continue": "متابعة",
+    "confirm": "تأكيد"
   },
   "Errors": {
     "notFound": {
@@ -363,6 +365,42 @@
     "receptionist": "موظف استقبال",
     "finance": "مالية",
     "all": "الكل",
-    "editPermissions": "تعديل الصلاحيات"
+    "editPermissions": "تعديل الصلاحيات",
+    "fullName": "الاسم الكامل",
+    "username": "اسم المستخدم",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الهاتف",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "specialty": "التخصص",
+    "specialtyDesc": "اختر التخصص لهذا المستخدم",
+    "specialtyPlaceholder": "اختر التخصص",
+    "addUserDesc": "إنشاء حساب موظف جديد وتحديد مستوى الوصول الخاص به.",
+    "rolePlaceholder": "اختر مستوى الوصول",
+    "fullNamePlaceholder": "مثلاً زياد صابر",
+    "usernamePlaceholder": "مثلاً zyad123",
+    "emailPlaceholder": "مثلاً zyad@rootsclinic.com",
+    "phonePlaceholder": "مثلاً +20 123 456 7890",
+    "securitySetup": "إعداد الأمان",
+    "securitySetupDesc": "قم بتعيين كلمة مرور مؤقتة للمستخدم.",
+    "passwordHint": "سيُطلب من المستخدم تغييرها عند تسجيل الدخول لأول مرة.",
+    "permissionNote": "ملاحظة: افتراضيًا، يتم إنشاء المستخدمين بأقل قدر من الصلاحيات. يمكنك تعديل وصولهم للوحدات في لوحة الصلاحيات بعد الإنشاء.",
+    "confirmAccount": "تأكيد الحساب",
+    "validation": {
+      "emailInvalid": "البريد الإلكتروني غير صالح",
+      "passwordMin": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+      "passwordMax": "يجب أن تكون كلمة المرور أقل من 72 حرفًا",
+      "usernameMin": "يجب أن يكون اسم المستخدم حرفين على الأقل",
+      "usernameMax": "اسم المستخدم طويل جدًا",
+      "usernameRegex": "يمكن أن يحتوي اسم المستخدم فقط على أحرف وأرقام ونقاط وشرطات وشرطات سفلية",
+      "fullNameMin": "يجب أن يكون الاسم الكامل حرفين على الأقل",
+      "fullNameMax": "الاسم الكامل طويل جدًا",
+      "phoneMax": "رقم الهاتف طويل جدًا",
+      "specialtyInvalid": "تخصص غير صالح",
+      "specialtyRequired": "التخصص مطلوب لحسابات الأطباء",
+      "specialtyOnlyDoctor": "يجب تعيين التخصص فقط لحسابات الأطباء",
+      "staffIdInvalid": "معرف الموظف غير صالح",
+      "urlInvalid": "رابط غير صالح"
+    }
   }
 }
