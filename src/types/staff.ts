@@ -24,26 +24,26 @@ export interface User {
 
   // from doctors → specialties join (null for non-doctors)
   specialty: string;
+  specialty_id: string | null;
+  auth_id: string;
 }
 
-// for the create/invite form (admin creates a new staff member)
-export interface CreateUserPayload {
-  email: string; // goes to Supabase Auth
-  password: string; // goes to Supabase Auth
+export interface UserPayload {
   username: string;
   full_name: string;
   role: StaffRole;
   phone?: string;
-  specialty_id?: string; // only required if role === "doctor"
+  avatar_url?: string;
+  specialty_id?: string;
+}
+
+// for the create/invite form (admin creates a new staff member)
+export interface CreateUserPayload extends UserPayload {
+  email: string; // goes to Supabase Auth
+  password: string; // goes to Supabase Auth
 }
 
 // for the edit form (updating staff row only, email is immutable)
-export interface UpdateUserPayload {
+export interface UpdateUserPayload extends Partial<UserPayload> {
   id: string;
-  username?: string;
-  full_name?: string;
-  role?: StaffRole;
-  phone?: string;
-  avatar_url?: string;
-  is_active?: boolean;
 }

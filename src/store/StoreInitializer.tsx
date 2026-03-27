@@ -30,7 +30,8 @@ export default function StoreInitializer({
                 full_name: "",
                 role: "",
                 email: user.email || "",
-                avatar_url: ""
+                avatar_url: "",
+                permissions: null
             }
 
             try {
@@ -41,7 +42,8 @@ export default function StoreInitializer({
                         full_name: dbStaff.full_name,
                         username: dbStaff.username,
                         avatar_url: dbStaff.avatar_url,
-                        role: dbStaff.role
+                        role: dbStaff.role,
+                        permissions: dbStaff.permissions
                     }
                 }
             } catch (err) {

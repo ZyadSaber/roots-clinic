@@ -357,8 +357,10 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "editUser": "تعديل المستخدم",
+    "editUserDesc": "تحديث تفاصيل ملف الموظف وإعدادات الحساب.",
     "resetPassword": "إعادة ضبط كلمة المرور",
     "deactivateUser": "إلغاء تنشيط المستخدم",
+    "activateUser": "تنشيط المستخدم",
     "never": "أبداً",
     "admin": "مدير",
     "doctor": "طبيب",
@@ -400,7 +402,8 @@
       "specialtyRequired": "التخصص مطلوب لحسابات الأطباء",
       "specialtyOnlyDoctor": "يجب تعيين التخصص فقط لحسابات الأطباء",
       "staffIdInvalid": "معرف الموظف غير صالح",
-      "urlInvalid": "رابط غير صالح"
+      "urlInvalid": "رابط غير صالح",
+      "passwordsMustMatch": "كلمات المرور يجب أن تتطابق"
     }
   }
 }

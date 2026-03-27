@@ -341,8 +341,10 @@
     "active": "Active",
     "inactive": "Inactive",
     "editUser": "Edit User",
+    "editUserDesc": "Update staff member profile details and account settings.",
     "resetPassword": "Reset Password",
     "deactivateUser": "Deactivate User",
+    "activateUser": "Activate User",
     "never": "Never",
     "admin": "Admin",
     "doctor": "Doctor",
@@ -384,7 +386,8 @@
       "specialtyRequired": "Specialty is required for doctor accounts",
       "specialtyOnlyDoctor": "Specialty should only be set for doctor accounts",
       "staffIdInvalid": "Invalid staff ID",
-      "urlInvalid": "Invalid URL"
+      "urlInvalid": "Invalid URL",
+      "passwordsMustMatch": "Passwords must match"
     }
   }
 }

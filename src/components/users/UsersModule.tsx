@@ -29,6 +29,7 @@ import {
     Edit,
     Trash2,
     Key,
+    UserCheck,
 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { User } from "@/types/staff"
@@ -43,6 +44,8 @@ import { deleteUser, updateUserPermissions } from "@/services/staff"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import AddUserDialog from "./AddUserDialog"
+import StaffUpdateDialog from "./StaffUpdateDialog"
+import ResetPasswordDialog from "./ResetPasswordDialog"
 import { useVisibility } from "@/hooks"
 
 const roleColors: Record<string, string> = {
@@ -62,6 +65,8 @@ const roleIcons: Record<string, React.ReactNode> = {
 const UsersModule = ({ staff }: { staff: User[] }) => {
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const { visible, handleStateChange, handleClose, handleOpen } = useVisibility()
+    const { visible: editVisible, handleStateChange: handleEditStateChange, handleClose: handleEditClose, handleOpen: handleEditOpen } = useVisibility()
+    const { visible: resetVisible, handleStateChange: handleResetStateChange, handleClose: handleResetClose, handleOpen: handleResetOpen } = useVisibility()
 
     const tCommon = useTranslations("Common")
     const t = useTranslations("Users")
@@ -247,14 +252,23 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem>
-                                                        <Edit className="w-4 h-4 mr-2" />
-                                                        {t("editUser")}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Key className="w-4 h-4 mr-2" />
-                                                        {t("resetPassword")}
-                                                    </DropdownMenuItem>
+                                                    {!!user.email ? (
+                                                        <>
+                                                            <DropdownMenuItem onClick={handleEditOpen} disabled={user.role === "doctor"}>
+                                                                <Edit className="w-4 h-4 mr-2" />
+                                                                {t("editUser")}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={handleResetOpen}>
+                                                                <Key className="w-4 h-4 mr-2" />
+                                                                {t("resetPassword")}
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    ) : (
+                                                        <DropdownMenuItem onClick={() => { }}>
+                                                            <UserCheck className="w-4 h-4 mr-2" />
+                                                            {t("activateUser")}
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     <DropdownMenuItem className="text-destructive" onClick={handleDelete(user.id)} disabled={isDeleting}>
                                                         <Trash2 className="w-4 h-4 mr-2" />
                                                         {t("deactivateUser")}
@@ -311,6 +325,20 @@ const UsersModule = ({ staff }: { staff: User[] }) => {
                 open={visible}
                 onOpenChange={handleStateChange}
                 handleClose={handleClose}
+            />}
+
+            {editVisible && <StaffUpdateDialog
+                open={editVisible}
+                onOpenChange={handleEditStateChange}
+                user={selectedUser}
+                handleClose={handleEditClose}
+            />}
+
+            {resetVisible && <ResetPasswordDialog
+                open={resetVisible}
+                onOpenChange={handleResetStateChange}
+                user={selectedUser!}
+                handleClose={handleResetClose}
             />}
         </div>
     )

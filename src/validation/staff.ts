@@ -75,4 +75,31 @@ export const UpdateUserSchema = z.object({
     .optional()
     .or(z.literal("")),
   is_active: z.boolean().optional(),
-});
+  specialty_id: z
+    .string()
+    .uuid("validation.specialtyInvalid")
+    .optional()
+    .or(z.literal("")),
+})
+  .superRefine((data, ctx) => {
+    if (data.role === "doctor" && !data.specialty_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["specialty_id"],
+        message: "validation.specialtyRequired",
+      });
+    }
+  });
+
+export const ResetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, "validation.passwordMin")
+      .max(72, "validation.passwordMax"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "validation.passwordsMustMatch",
+    path: ["confirmPassword"],
+  });

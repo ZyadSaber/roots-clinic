@@ -1,3 +1,4 @@
+import { UserPermissions } from "@/types/staff";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface AuthUser {
@@ -7,6 +8,7 @@ export interface AuthUser {
   role: "admin" | "doctor" | "receptionist" | "finance" | "super_admin" | "";
   email?: string;
   avatar_url?: string;
+  permissions: UserPermissions | null;
 }
 
 interface AuthState {

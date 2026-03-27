@@ -8,6 +8,7 @@ import {
   User,
   StaffRole,
   UserPermissions,
+  UpdateUserPayload,
 } from "@/types/staff";
 import { createClient } from "@supabase/supabase-js";
 import { getLocale } from "next-intl/server";
@@ -31,8 +32,6 @@ export async function getAdminClient() {
   });
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
-
 export async function getStaffById(id: string) {
   try {
     const locale = await getLocale();
@@ -47,11 +46,14 @@ export async function getStaffById(id: string) {
         swe.phone,
         swe.is_active,
         swe.permissions,
+        swe.auth_id,
         swe.created_at,
         swe.updated_at,
         swe.email,
         au.last_sign_in_at,
-        sp.${specialtyField} AS specialty
+        sp.${specialtyField} AS specialty,
+        d.specialty_id,
+        swe.permissions
       FROM staff_with_email swe
       LEFT JOIN auth.users  au ON au.id        = swe.id
       LEFT JOIN doctors     d  ON d.staff_id   = swe.id
@@ -77,7 +79,8 @@ export async function getAllStaff(): Promise<User[]> {
       SELECT
         swe.*,
         au.last_sign_in_at,
-        sp.${specialtyField} AS specialty
+        sp.${specialtyField} AS specialty,
+        d.specialty_id
       FROM staff_with_email swe
       LEFT JOIN auth.users  au ON au.id        = swe.id
       LEFT JOIN doctors     d  ON d.staff_id   = swe.id
@@ -91,8 +94,6 @@ export async function getAllStaff(): Promise<User[]> {
     throw error;
   }
 }
-
-// ─── Mutations ────────────────────────────────────────────────────────────────
 
 export async function updateUserPermissions(
   staffId: string,
@@ -178,7 +179,7 @@ export async function createUser(
     };
   }
 
-  // ✅ Fix #1 & #2 — getAdminClient is sync, no await needed
+  // ✅ Fix #1 & #2 — getAdminClient is async, must await it
   const supabaseAdmin = await getAdminClient();
 
   const existing = await queryMany<{ id: string }>({
@@ -320,3 +321,114 @@ export async function deleteUser(staffId: string): Promise<ActionResult> {
     return { success: true };
   }
 }
+
+export async function resetUserPassword(
+  staffId: string,
+  newPassword: string,
+): Promise<ActionResult> {
+  // 1. Basic guards
+  if (!staffId) {
+    return { success: false, error: "Staff ID is required" };
+  }
+  if (!newPassword || newPassword.length < 8) {
+    return {
+      success: false,
+      error: "Validation failed",
+      fieldErrors: { newPassword: "Password must be at least 8 characters" },
+    };
+  }
+  if (newPassword.length > 72) {
+    return {
+      success: false,
+      error: "Validation failed",
+      fieldErrors: { newPassword: "Password must be under 72 characters" },
+    };
+  }
+
+  const supabaseAdmin = await getAdminClient();
+
+  // 2. Fetch the auth_id for this staff member
+  const staffMember = await queryOne<{ auth_id: string }>({
+    sql: `SELECT auth_id FROM staff WHERE id = $1 AND is_active = TRUE LIMIT 1`,
+    params: [staffId],
+  });
+
+  if (!staffMember) {
+    return { success: false, error: "Staff member not found or deactivated" };
+  }
+
+  // 3. Update password via Admin API — no email/old password needed
+  const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+    staffMember.auth_id,
+    { password: newPassword },
+  );
+
+  if (authError) {
+    console.error("resetUserPassword error:", authError.message);
+    return {
+      success: false,
+      error: `Failed to reset password: ${authError.message}`,
+    };
+  }
+
+  const { error: signOutError } = await supabaseAdmin.auth.admin.signOut(
+    staffMember.auth_id,
+    "global",
+  );
+
+  if (signOutError) {
+    console.warn(
+      "resetUserPassword: sessions not fully invalidated:",
+      signOutError.message,
+    );
+  }
+
+  return { success: true };
+}
+
+export async function updateUser(
+  payload: UpdateUserPayload,
+): Promise<ActionResult> {
+  const { id, username, full_name, role, phone, avatar_url } = payload;
+
+  try {
+    const updated = await queryOne<{ id: string }>({
+      sql: `
+        UPDATE staff
+        SET username   = $2,
+            full_name  = $3,
+            role       = $4,
+            phone      = $5,
+            avatar_url = $6,
+            updated_at = NOW()
+        WHERE id = $1
+        RETURNING id
+      `,
+      params: [
+        id,
+        username || "",
+        full_name || "",
+        role || "",
+        phone || "",
+        avatar_url || null,
+      ],
+    });
+
+    if (!updated) {
+      return { success: false, error: "Staff member not found" };
+    }
+  } catch (dbError) {
+    const msg = dbError instanceof Error ? dbError.message : "Database error";
+    if (msg.includes("unique") || msg.includes("duplicate")) {
+      return {
+        success: false,
+        error: "Validation failed",
+        fieldErrors: { username: `Username "${username}" is already taken` },
+      };
+    }
+    return { success: false, error: `Failed to update staff: ${msg}` };
+  }
+
+  return { success: true };
+}
+
