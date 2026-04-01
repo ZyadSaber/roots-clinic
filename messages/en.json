@@ -2,7 +2,7 @@
   "Routes": {
     "doctorsTitle": "Doctor",
     "doctorsDesc": "View and manage your professional clinical staff and their specialties.",
-    "patientsTitle": "Patient",
+    "patientsTitle": "Patients",
     "patientsDesc": "View and manage patient clinical records and history.",
     "usersTitle": "Users & staff",
     "usersDesc": "View and manage users & staff records and history.",
@@ -58,7 +58,8 @@
     "settingsDesc": "Clinic configuration and system settings",
     "homeDesc": "Back to the landing page",
     "continue": "Continue",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "ndf": "No data found"
   },
   "Errors": {
     "notFound": {
@@ -388,6 +389,59 @@
       "staffIdInvalid": "Invalid staff ID",
       "urlInvalid": "Invalid URL",
       "passwordsMustMatch": "Passwords must match"
+    }
+  },
+  "Appointments": {
+    "addAppointment": "New Appointment",
+    "stats": {
+      "todayTotal": "Today's Total",
+      "completed": "Completed",
+      "pending": "Pending",
+      "cancelled": "Cancelled",
+      "arrived": "Arrived",
+      "inChair": "In Chair",
+      "noShow": "No Show",
+      "confirmed": "Confirmed"
+    },
+    "tabs": {
+      "list": "List View",
+      "calendar": "Calendar"
+    },
+    "form": {
+      "title": "Schedule New Appointment",
+      "description": "Fill in the details below to create a new appointment",
+      "patientInfo": "Patient Information",
+      "newPatient": "New Patient",
+      "selectPatient": "Select a patient",
+      "details": "Appointment Details",
+      "doctor": "Doctor",
+      "selectDoctor": "Select doctor",
+      "type": "Appointment Type",
+      "selectType": "Select type",
+      "timeSlot": "Time Slot",
+      "selectTime": "Select time",
+      "duration": "Duration",
+      "selectDuration": "Select duration",
+      "notes": "Notes (Optional)",
+      "notesPlaceholder": "Add any additional notes for this appointment...",
+      "create": "Create Appointment",
+      "success": "Appointment scheduled successfully!"
+    },
+    "statuses": {
+      "scheduled": "Scheduled",
+      "waiting": "Waiting",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "arrived": "Arrived",
+      "in_chair": "In Chair",
+      "no_show": "No Show",
+      "confirmed": "Confirmed",
+      "pending": "Pending"
+    },
+    "priorities": {
+      "normal": "Normal",
+      "urgent": "Urgent"
     }
   }
 }

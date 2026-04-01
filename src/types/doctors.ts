@@ -20,6 +20,14 @@ export interface DoctorSummary {
   years_experience: number;
   specialty_id: string;
 }
+
+export type DoctorAppointments = {
+  doctor_id: string;
+  name: string;
+  specialty_name: string;
+  status: DoctorStatus;
+};
+
 export type DoctorFormData = {
   id?: string;
   staff_id?: string;

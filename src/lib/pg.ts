@@ -33,7 +33,7 @@ export async function query<T extends QueryResultRow = QueryResultRow>({
 export async function queryOne<T extends QueryResultRow = QueryResultRow>({
   sql,
   params,
-}: QueryParams): Promise<T | null> {
+}: QueryParams): Promise<T> {
   const rows = await query<T>({ sql, params });
   return rows[0] || null;
 }

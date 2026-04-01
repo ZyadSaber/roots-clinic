@@ -26,6 +26,7 @@ import { setSearchQuery } from "@/store/slices/uiSharedSlice"
 
 export function Header() {
     const t = useTranslations("Common")
+    const tNav = useTranslations("Routes")
     const locale = useLocale()
     const router = useRouter()
     const pathname = usePathname()
@@ -75,7 +76,7 @@ export function Header() {
         const lastPart = parts[parts.length - 1]
         if (!lastPart) return "Command Center"
         if (/^\d+$/.test(lastPart)) return `#${lastPart}`
-        return t(lastPart.toLowerCase()) || lastPart.charAt(0).toUpperCase() + lastPart.slice(1)
+        return tNav(`${lastPart}Title`) || lastPart.charAt(0).toUpperCase() + lastPart.slice(1)
     }
 
     const { activeNotifications } = useSelector((state: RootState) => state.uiShared)
@@ -107,7 +108,7 @@ export function Header() {
                 {/* Desktop Elements */}
                 <div className="hidden lg:flex items-center gap-4 text-sm font-bold text-muted-foreground/60">
                     <div className="flex items-center gap-4 bg-accent/30 px-4 py-1.5 rounded-xl border border-border/20">
-                        <div className="flex items-center gap-2 text-foreground/80">
+                        <div className="flex items-center gap-2 0ext-foreground/80">
                             <Calendar className="w-4 h-4 text-primary" />
                             <span className="whitespace-nowrap tabular-nums">
                                 {time?.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}

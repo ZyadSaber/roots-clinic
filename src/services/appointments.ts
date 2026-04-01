@@ -1,0 +1,143 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { queryMany, queryOne, execute } from "@/lib/pg";
+import {
+  Appointment,
+  AppointmentPayload,
+  AppointmentStats,
+} from "@/types/appointments";
+
+export async function getAppointmentsStatsByDate(
+  date: Date,
+): Promise<AppointmentStats> {
+  try {
+    const sql = `
+      SELECT
+        (SELECT COUNT(*) FROM appointments  WHERE DATE(appointment_date) = $1  ) AS total,
+  		  (SELECT COUNT(*) FROM appointments  WHERE status='completed' AND DATE(appointment_date) = $1) AS completed,
+        (SELECT COUNT(*) FROM appointments  WHERE status='no_show' AND DATE(appointment_date) = $1) AS no_show,
+        (SELECT COUNT(*) FROM appointments  WHERE status='cancelled' AND DATE(appointment_date) = $1) AS cancelled,
+        (SELECT COUNT(*) FROM appointments  WHERE status='arrived' AND DATE(appointment_date) = $1) AS arrived,
+        (SELECT COUNT(*) FROM appointments  WHERE status='in_chair' AND DATE(appointment_date) = $1) AS in_chair,
+        (SELECT COUNT(*) FROM appointments  WHERE status='pending' AND DATE(appointment_date) = $1) AS pending,
+        (SELECT COUNT(*) FROM appointments  WHERE status='confirmed' AND DATE(appointment_date) = $1) AS confirmed,
+        (SELECT MIN(start_time) FROM doctor_schedules WHERE day_of_week = EXTRACT(DOW FROM $1::date)) AS start_time,
+        (SELECT MAX(end_time) FROM doctor_schedules WHERE day_of_week = EXTRACT(DOW FROM $1::date)) AS end_time
+    `;
+    return await queryOne<AppointmentStats>({ sql, params: [date] });
+  } catch (error) {
+    console.error("Error fetching appointments stats:", error);
+    throw error;
+  }
+}
+
+export async function getAllAppointments(date: Date): Promise<Appointment[]> {
+  try {
+    const sql = `
+      SELECT 
+        a.id,
+	      a.patient_id,
+	      p.full_name AS patient_name,
+	      p.patient_code,
+	      a.doctor_id,
+        s.full_name AS doctor_name,
+	      a.appointment_date,
+	      a.arrived_at,
+	      a.completed_at,
+	      a.duration_mins,
+	      a.procedure_type,
+	      a.status,
+	      a.notes,
+	      a.priority
+      FROM appointments a
+      JOIN patients p ON p.id = a.patient_id
+	    JOIN doctors d on d.id = a.doctor_id
+      JOIN staff s ON s.id = d.staff_id
+      WHERE DATE(a.appointment_date) = $1
+      ORDER BY a.appointment_date ASC
+    `;
+    return await queryMany<Appointment>({ sql, params: [date] });
+  } catch (error) {
+    console.error("Error fetching all appointments:", error);
+    throw error;
+  }
+}
+
+export async function createAppointment(
+  payload: AppointmentPayload,
+): Promise<{ success: boolean; data?: Appointment; error?: string }> {
+  const {
+    patient_id,
+    doctor_id,
+    appointment_date,
+    start_time,
+    duration,
+    type,
+    notes,
+  } = payload;
+
+  try {
+    const result = await queryOne<Appointment>({
+      sql: `
+        INSERT INTO appointments (
+          patient_id, 
+          doctor_id, 
+          appointment_date, 
+          start_time, 
+          duration, 
+          type, 
+          status, 
+          notes
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, 'scheduled', $7)
+        RETURNING *
+      `,
+      params: [
+        patient_id,
+        doctor_id,
+        appointment_date,
+        start_time,
+        duration,
+        type,
+        notes || "",
+      ],
+    });
+
+    if (result) {
+      revalidatePath("/appointments");
+      return { success: true, data: result };
+    }
+    return { success: false, error: "Failed to create appointment" };
+  } catch (error) {
+    console.error("Error creating appointment:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Database error",
+    };
+  }
+}
+
+export async function updateAppointmentStatus(
+  id: string,
+  status: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const result = await execute({
+      sql: `UPDATE appointments SET status = $1, updated_at = NOW() WHERE id = $2`,
+      params: [status, id],
+    });
+
+    if (result && (result.rowCount ?? 0) > 0) {
+      revalidatePath("/appointments");
+      return { success: true };
+    }
+    return { success: false, error: "Appointment not found" };
+  } catch (error) {
+    console.error("Error updating appointment status:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Database error",
+    };
+  }
+}

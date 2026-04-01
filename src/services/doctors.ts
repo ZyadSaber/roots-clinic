@@ -3,8 +3,39 @@
 import isArrayHasData from "@/lib/isArrayHasData";
 import { queryMany, executeTransaction } from "@/lib/pg";
 import { DoctorScheduleRecord } from "@/types/database";
-import { DoctorSummary, DoctorFormData } from "@/types/doctors";
+import {
+  DoctorSummary,
+  DoctorFormData,
+  DoctorAppointments,
+} from "@/types/doctors";
 import { revalidatePath } from "next/cache";
+import { getLocale } from "next-intl/server";
+import { SPECIALTY_FIELD } from "@/constants/specilalty";
+
+export async function getDoctorAppointments(
+  selectedDate: Date,
+): Promise<DoctorAppointments[]> {
+  const locale = await getLocale();
+  const specialtyField = SPECIALTY_FIELD[locale] ?? "english_name";
+  const sql = `
+    SELECT 
+      d.id AS doctor_id,
+      s.full_name AS name,
+      sp.${specialtyField} AS specialty_name,
+      d.status,
+      d.created_at
+    FROM doctors d
+    JOIN staff s ON d.staff_id = s.id
+    LEFT JOIN specialties sp ON d.specialty_id = sp.id
+    WHERE s.is_active = TRUE
+    ORDER BY s.full_name ASC;
+    `;
+  // AND d.created_at <= $1
+  return (await queryMany({
+    sql,
+    // params: [selectedDate],
+  })) as DoctorAppointments[];
+}
 
 export async function fetchAvailableDoctors(): Promise<DoctorSummary[]> {
   const sql = `

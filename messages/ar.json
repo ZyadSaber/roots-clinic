@@ -74,7 +74,8 @@
     "finance": "المالية",
     "financeDesc": "الإيرادات والمصروفات والتقارير المالية",
     "continue": "متابعة",
-    "confirm": "تأكيد"
+    "confirm": "تأكيد",
+    "nfd": "لا يوجد بيانات متاحة"
   },
   "Errors": {
     "notFound": {
@@ -404,6 +405,61 @@
       "staffIdInvalid": "معرف الموظف غير صالح",
       "urlInvalid": "رابط غير صالح",
       "passwordsMustMatch": "كلمات المرور يجب أن تتطابق"
+    }
+  },
+  "Appointments": {
+    "pageTitle": "جدول المواعيد",
+    "pageDescription": "إدارة وتتبع جميع المواعيد",
+    "addAppointment": "موعد جديد",
+    "stats": {
+      "todayTotal": "إجمالي اليوم",
+      "completed": "تم الانتهاء",
+      "pending": "منتظر",
+      "cancelled": "ملغاة",
+      "arrived": "حضر",
+      "inChair": "بالداخل",
+      "noShow": "لم يحضر",
+      "confirmed": "مؤكد"
+    },
+    "tabs": {
+      "list": "عرض القائمة",
+      "calendar": "التقويم"
+    },
+    "form": {
+      "title": "جدولة موعد جديد",
+      "description": "املأ التفاصيل أدناه لإنشاء موعد جديد",
+      "patientInfo": "معلومات المريض",
+      "newPatient": "مريض جديد",
+      "selectPatient": "اختر مريضاً",
+      "details": "تفاصيل الموعد",
+      "doctor": "الطبيب",
+      "selectDoctor": "اختر الطبيب",
+      "type": "نوع الموعد",
+      "selectType": "اختر النوع",
+      "timeSlot": "وقت الموعد",
+      "selectTime": "اختر الوقت",
+      "duration": "المدة",
+      "selectDuration": "اختر المدة",
+      "notes": "ملاحظات (اختياري)",
+      "notesPlaceholder": "أضف أي ملاحظات إضافية لهذا الموعد...",
+      "create": "إنشاء الموعد",
+      "success": "تم جدولة الموعد بنجاح!"
+    },
+    "statuses": {
+      "scheduled": "مجدول",
+      "waiting": "في الانتظار",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "cancelled": "إلغاء",
+      "arrived": "حضر",
+      "in_chair": "بالداخل",
+      "no_show": "لم يحضر",
+      "confirmed": "مؤكد",
+      "pending": "معلق"
+    },
+    "priorities": {
+      "normal": "عادي",
+      "urgent": "عاجل"
     }
   }
 }

@@ -53,9 +53,10 @@ interface PatientsModuleProps {
 }
 
 export function PatientsModule({ patients, stats }: PatientsModuleProps) {
-    const t = useTranslations("Users")
+    const t = useTranslations("Patients")
     const tc = useTranslations("Common")
-    const tForm = useTranslations("Users.form")
+    const tForm = useTranslations("Patients.form")
+    const tTitle = useTranslations("Routes")
     const dispatch = useDispatch()
     const selectedPatientId = useSelector((state: RootState) => state.patients.selectedPatientId)
     const selectedPatient = patients.find(d => d.patient_id === selectedPatientId);
@@ -105,8 +106,8 @@ export function PatientsModule({ patients, stats }: PatientsModuleProps) {
             {/* Header Actions */}
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-start md:items-center">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight mb-2">{t("pageTitle")}</h1>
-                    <p className="text-muted-foreground font-medium">{t("pageDescription")}</p>
+                    <h1 className="text-3xl font-black tracking-tight mb-2">{tTitle("patientsTitle")}</h1>
+                    <p className="text-muted-foreground font-medium">{tTitle("patientsDesc")}</p>
                 </div>
                 <div className="flex items-end gap-3 w-full sm:w-auto">
                     <LabeledCheckBox
