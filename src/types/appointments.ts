@@ -27,6 +27,7 @@ export interface Appointment {
   notes?: string;
   procedure_type: string;
   priority: "normal" | "urgent";
+  duration_mins: string;
 }
 
 export interface AppointmentPayload {

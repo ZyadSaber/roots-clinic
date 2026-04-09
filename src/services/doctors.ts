@@ -27,13 +27,12 @@ export async function getDoctorAppointments(
     FROM doctors d
     JOIN staff s ON d.staff_id = s.id
     LEFT JOIN specialties sp ON d.specialty_id = sp.id
-    WHERE s.is_active = TRUE
+    WHERE s.is_active = TRUE AND DATE(d.created_at) <= $1
     ORDER BY s.full_name ASC;
     `;
-  // AND d.created_at <= $1
   return (await queryMany({
     sql,
-    // params: [selectedDate],
+    params: [selectedDate],
   })) as DoctorAppointments[];
 }
 

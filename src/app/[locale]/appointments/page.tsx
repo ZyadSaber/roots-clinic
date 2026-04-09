@@ -1,9 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
-import { AlertTriangle, Plus, Clock, User as UserIcon, Stethoscope, Calendar, FileSpreadsheet, Printer, Edit2 } from "lucide-react"
+import { AlertTriangle, Plus, Clock, User as UserIcon, Stethoscope, Calendar, FileSpreadsheet, Printer, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
 import { getAllAppointments, getAppointmentsStatsByDate } from "@/services/appointments"
 import { format } from "date-fns"
 import { downloadExcel, downloadPDF } from "@/helpers/exportHelpers"
@@ -31,20 +31,19 @@ const statusColors: Record<AppointmentStatus, string> = {
     pending: "bg-blue-500/20 text-blue-500",
 }
 
+const typeColors: Record<AppointmentStatus, { bg: string; border: string; text: string }> = {
+    "completed": { bg: "bg-primary/20", border: "border-primary/30", text: "text-primary" },
+    "cancelled": { bg: "bg-indigo-500/20", border: "border-indigo-500/30", text: "text-indigo-500" },
+    "arrived": { bg: "bg-emerald-500/20", border: "border-emerald-500/30", text: "text-emerald-500" },
+    "in_chair": { bg: "bg-purple-500/20", border: "border-purple-500/30", text: "text-purple-500" },
+    "no_show": { bg: "bg-blue-500/20", border: "border-blue-500/30", text: "text-blue-500" },
+    "confirmed": { bg: "bg-amber-500/20", border: "border-amber-500/30", text: "text-amber-500" },
+    "pending": { bg: "bg-destructive/20", border: "border-destructive/30", text: "text-destructive" },
+}
+
 const priorityColors: Record<string, string> = {
     normal: "bg-secondary text-muted-foreground border-transparent",
     urgent: "bg-destructive/10 text-destructive border-destructive/20 font-bold shadow-sm",
-}
-
-const typeColors: Record<string, { bg: string; border: string; text: string }> = {
-    "Check-up": { bg: "bg-primary/15", border: "border-primary/50", text: "text-primary" },
-    "Consultation": { bg: "bg-chart-2/15", border: "border-chart-2/50", text: "text-chart-2" },
-    "Follow-up": { bg: "bg-chart-3/15", border: "border-chart-3/50", text: "text-chart-3" },
-    "X-Ray Review": { bg: "bg-chart-4/15", border: "border-chart-4/50", text: "text-chart-4" },
-    "Lab Results": { bg: "bg-chart-5/15", border: "border-chart-5/50", text: "text-chart-5" },
-    "Surgery Prep": { bg: "bg-destructive/15", border: "border-destructive/50", text: "text-destructive" },
-    "Emergency": { bg: "bg-destructive/20", border: "border-destructive", text: "text-destructive" },
-    "Vaccination": { bg: "bg-primary/10", border: "border-primary/30", text: "text-primary" },
 }
 
 const ROW_HEIGHT = 64
@@ -170,6 +169,15 @@ export default function AppointmentsPage() {
         }
         return range;
     }, [startHour, endHour]);
+
+    const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+    const scrollGrid = (direction: 'left' | 'right') => {
+        if (scrollContainerRef.current) {
+            const amount = 500
+            scrollContainerRef.current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' })
+        }
+    }
 
     const isLoading = isLoadingApt || isLoadingStaff || isLoadingStats
     const error = errorApt
@@ -353,19 +361,33 @@ export default function AppointmentsPage() {
                                         <CardTitle className="text-foreground text-base">
                                             Daily Schedule — {displayDateStr}
                                         </CardTitle>
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            {Object.entries(typeColors).slice(0, 4).map(([type, c]) => (
-                                                <div key={type} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                    <span className={`w-2.5 h-2.5 rounded-sm border ${c.bg} ${c.border}`} />
-                                                    {type}
-                                                </div>
-                                            ))}
-                                        </div>
+                                            <div className="flex items-center gap-1.5 bg-background/50 p-1 rounded-xl border border-border shadow-sm">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => scrollGrid('left')}
+                                                    className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                </Button>
+                                                <div className="h-4 w-px bg-border mx-0.5" />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => scrollGrid('right')}
+                                                    className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="p-0 pb-4 relative w-full !max-w-full overflow-hidden min-w-0">
+                                <CardContent className="p-0 pb-4 relative w-full max-w-full! overflow-hidden min-w-0">
                                     <div className="w-full relative overflow-hidden flex flex-col min-w-0">
-                                        <div className="overflow-x-auto w-full scrollbar-hide">
+                                        <div
+                                            ref={scrollContainerRef}
+                                            className="overflow-x-hidden w-full"
+                                        >
                                             <div
                                                 className="relative"
                                                 style={{
@@ -414,17 +436,16 @@ export default function AppointmentsPage() {
                                                         </div>
                                                     ))}
 
-                                                    {/* Appointment blocks */}
-                                                    {appointments.filter((_: Appointment) => !selectedDate).map((apt: Appointment) => {
-                                                        const docIndex = doctors.findIndex((d) => d.id === apt.doctor_id)
+                                                    {appointments.map((apt: Appointment) => {
+                                                        const docIndex = doctors.findIndex((d) => d.doctor_id === apt.doctor_id)
                                                         if (docIndex === -1) return null
 
                                                         if (startHour === null) return null;
-                                                        const startDecimal = timeToDecimal(apt.start_time)
-                                                        const durationMins = durationToMinutes(apt.duration)
+                                                        const startDecimal = timeToDecimal(format(new Date(apt.appointment_date), "hh:mm a"))
+                                                        const durationMins = durationToMinutes(apt.duration_mins)
                                                         const topPx = (startDecimal - startHour) * ROW_HEIGHT
                                                         const heightPx = Math.max((durationMins / 60) * ROW_HEIGHT, 32)
-                                                        const colors = typeColors[apt.type] ?? typeColors["Check-up"]
+                                                        const colors = typeColors[apt.status]
 
                                                         return (
                                                             <div
@@ -453,7 +474,7 @@ export default function AppointmentsPage() {
                                                                 {heightPx > 60 && (
                                                                     <div className="flex items-center gap-1 mt-1">
                                                                         <Clock className="w-2.5 h-2.5 text-muted-foreground" />
-                                                                        <span className="text-[10px] text-muted-foreground">{apt.start_time}</span>
+                                                                        <span className="text-[10px] text-muted-foreground">{format(new Date(apt.appointment_date), "hh:mm a")}</span>
                                                                     </div>
                                                                 )}
                                                             </div>
