@@ -3,7 +3,7 @@
 import { useMemo, useState, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
-import { AlertTriangle, Plus, Clock, User as UserIcon, Stethoscope, Calendar, FileSpreadsheet, Printer, Edit2, ChevronLeft, ChevronRight } from "lucide-react"
+import { AlertTriangle, Clock, User as UserIcon, Stethoscope, Calendar, FileSpreadsheet, Printer, ChevronLeft, ChevronRight } from "lucide-react"
 import { getAllAppointments, getAppointmentsStatsByDate } from "@/services/appointments"
 import { format } from "date-fns"
 import { downloadExcel, downloadPDF } from "@/helpers/exportHelpers"
@@ -18,7 +18,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog"
 import { StatusUpdateDialog } from "@/components/appointments/StatusUpdateDialog"
 import { Appointment, AppointmentStats, AppointmentStatus } from "@/types/appointments"
-import { useVisibility } from "@/hooks"
 import { DoctorAppointments } from "@/types/doctors"
 
 const statusColors: Record<AppointmentStatus, string> = {
@@ -70,21 +69,7 @@ export default function AppointmentsPage() {
     const commonT = useTranslations("Common")
     const errorT = useTranslations("Errors.applicationError.505")
     const tTitle = useTranslations("Routes")
-    const [showNewAppointment, setShowNewAppointment] = useState(false)
-    const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-
-    const {
-        visible: statusUpdateVisible,
-        handleClose: handleCloseStatusUpdate,
-        handleStateChange: handleStateChangeStatusUpdate,
-        handleOpen
-    } = useVisibility()
-
-    const handleOpenStatusModal = (appointment: Appointment) => () => {
-        setSelectedAppointment(appointment)
-        handleOpen()
-    }
 
     const {
         data: appointments = [],
@@ -211,12 +196,7 @@ export default function AppointmentsPage() {
                                 onDateChange={setSelectedDate}
                                 showTime={false}
                             />
-                            <Button
-                                onClick={() => setShowNewAppointment(true)}
-                                className="rounded-xl h-12 px-6 gap-2 font-bold shadow-lg shadow-primary/20"
-                            >
-                                <Plus className="w-5 h-5" /> {t("addAppointment")}
-                            </Button>
+                            <AppointmentDialog initialDate={selectedDate} />
                         </div>
                     </div>
                     {statsData && (statsData.start_time || statsData.end_time) && (
@@ -272,7 +252,7 @@ export default function AppointmentsPage() {
                         </div>
                     )}
 
-                    <Tabs defaultValue="calendar" className="space-y-4">
+                    <Tabs defaultValue="list" className="space-y-4">
                         <TabsList className="bg-secondary p-1 rounded-xl">
                             <TabsTrigger value="list" className="rounded-lg px-6">{t("tabs.list")}</TabsTrigger>
                             <TabsTrigger value="calendar" className="rounded-lg px-6">{t("tabs.calendar")}</TabsTrigger>
@@ -284,7 +264,7 @@ export default function AppointmentsPage() {
                             <Card className="bg-card border-border">
                                 <CardHeader className="flex flex-row items-center justify-between pb-3">
                                     <CardTitle className="text-foreground text-lg font-bold">
-                                        {selectedDate ? new Date(selectedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "All Appointments"}
+                                        {format(selectedDate, "EEEE, MMMM d, yyyy")}
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
                                         <Button onClick={handleDownloadExcel} variant="outline" size="sm" className="h-9 px-3 gap-2 rounded-lg font-bold border-border bg-secondary/30 hover:bg-secondary/50 text-xs sm:text-sm">
@@ -339,10 +319,10 @@ export default function AppointmentsPage() {
                                                     <Badge variant="outline" className="border-border/50 text-muted-foreground">
                                                         {apt.procedure_type}
                                                     </Badge>
-                                                    <div className="flex items-center gap-1.5 p-1 px-1.5 rounded-lg border border-border/50 bg-secondary/20 hover:bg-secondary/40 transition-colors cursor-pointer" onClick={handleOpenStatusModal(apt)}>
-                                                        <Badge className={`${statusColors[apt.status] || "bg-secondary"} border-0`}>{t(`statuses.${apt.status}`)}</Badge>
-                                                        <Edit2 className="w-3 h-3 text-muted-foreground" />
-                                                    </div>
+                                                    <StatusUpdateDialog
+                                                        appointment={apt}
+                                                        statusColors={statusColors}
+                                                    />
                                                     <Badge variant="outline" className={priorityColors[apt.priority] || "bg-secondary"}>
                                                         {t(`priorities.${apt.priority}`)}
                                                     </Badge>
@@ -361,25 +341,25 @@ export default function AppointmentsPage() {
                                         <CardTitle className="text-foreground text-base">
                                             Daily Schedule — {displayDateStr}
                                         </CardTitle>
-                                            <div className="flex items-center gap-1.5 bg-background/50 p-1 rounded-xl border border-border shadow-sm">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => scrollGrid('left')}
-                                                    className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
-                                                >
-                                                    <ChevronLeft className="w-4 h-4" />
-                                                </Button>
-                                                <div className="h-4 w-px bg-border mx-0.5" />
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => scrollGrid('right')}
-                                                    className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
-                                                >
-                                                    <ChevronRight className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                                        <div className="flex items-center gap-1.5 bg-background/50 p-1 rounded-xl border border-border shadow-sm">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => scrollGrid('left')}
+                                                className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </Button>
+                                            <div className="h-4 w-px bg-border mx-0.5" />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => scrollGrid('right')}
+                                                className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary"
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-0 pb-4 relative w-full max-w-full! overflow-hidden min-w-0">
@@ -488,24 +468,6 @@ export default function AppointmentsPage() {
                             </Card>
                         </TabsContent>
                     </Tabs>
-
-                    {/* New Appointment Modal */}
-                    <AppointmentDialog
-                        open={showNewAppointment}
-                        onOpenChange={setShowNewAppointment}
-                    // initialDate={selectedAppointment}
-                    />
-
-                    {/* Status Update Modal */}
-                    {selectedAppointment && statusUpdateVisible && (
-                        <StatusUpdateDialog
-                            appointment={selectedAppointment}
-                            open={statusUpdateVisible}
-                            onOpenChange={handleStateChangeStatusUpdate}
-                            onClose={handleCloseStatusUpdate}
-                            statusColors={statusColors}
-                        />
-                    )}
                 </div>
             </div>
         </LoadingOverlay >

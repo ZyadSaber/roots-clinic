@@ -438,12 +438,21 @@
       "selectType": "اختر النوع",
       "timeSlot": "وقت الموعد",
       "selectTime": "اختر الوقت",
+      "selectDoctorFirst": "اختر الطبيب أولاً",
+      "noSlotsAvailable": "لا توجد مواعيد متاحة هذا اليوم",
       "duration": "المدة",
       "selectDuration": "اختر المدة",
       "notes": "ملاحظات (اختياري)",
       "notesPlaceholder": "أضف أي ملاحظات إضافية لهذا الموعد...",
       "create": "إنشاء الموعد",
       "success": "تم جدولة الموعد بنجاح!"
+    },
+    "statusDialog": {
+      "trigger": "تحديث الحالة",
+      "title": "تحديث حالة الموعد",
+      "description": "اختر الحالة الجديدة لهذا الموعد.",
+      "submit": "تحديث الحالة",
+      "lockedMessage": "لا يمكن تغيير الحالة بعد جلوس المريض على الكرسي أو اكتمال الموعد."
     },
     "statuses": {
       "scheduled": "مجدول",

@@ -1,7 +1,7 @@
 "use server";
 
 import isArrayHasData from "@/lib/isArrayHasData";
-import { queryMany, executeTransaction } from "@/lib/pg";
+import { queryMany, queryOne, executeTransaction } from "@/lib/pg";
 import { DoctorScheduleRecord } from "@/types/database";
 import {
   DoctorSummary,
@@ -82,6 +82,25 @@ export async function getDoctorSchedule(
     sql,
     params: [doctorId],
   })) as DoctorScheduleRecord[];
+}
+
+/** Returns the active schedule for a doctor on the day-of-week of the given date */
+export async function fetchDoctorScheduleForDay(
+  doctorId: string,
+  date: Date,
+): Promise<{ start_time: string; end_time: string } | null> {
+  const dayOfWeek = date.getDay(); // 0=Sunday … 6=Saturday
+  return queryOne<{ start_time: string; end_time: string }>({
+    sql: `
+      SELECT start_time, end_time
+      FROM doctor_schedules
+      WHERE doctor_id = $1
+        AND day_of_week = $2
+        AND is_active = TRUE
+      LIMIT 1
+    `,
+    params: [doctorId, dayOfWeek],
+  });
 }
 
 export async function createDoctor(data: DoctorFormData) {

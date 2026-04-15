@@ -33,10 +33,9 @@ export interface Appointment {
 export interface AppointmentPayload {
   patient_id: string;
   doctor_id: string;
-  appointment_date: string;
-  start_time: string;
-  duration: string;
-  type: string;
+  appointment_date: string; // full ISO datetime e.g. "2025-01-15T09:30:00"
+  duration_mins: number;
+  procedure_type: string;
   notes?: string;
 }
 

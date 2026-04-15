@@ -3,12 +3,9 @@
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
-import { Check, Loader2 } from "lucide-react"
-
-// Services
+import { Check, Edit2, Loader2 } from "lucide-react"
+import { useVisibility } from "@/hooks"
 import { updateAppointmentStatus } from "@/services/appointments"
-
-// Components
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -17,31 +14,30 @@ import {
     DialogTitle,
     DialogDescription,
     DialogFooter,
+    DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-
-// Types
 import { Appointment, AppointmentStatus } from "@/types/appointments"
+
+const LOCKED_STATUSES: AppointmentStatus[] = ["in_chair", "completed"]
 
 interface StatusUpdateDialogProps {
     appointment: Appointment
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    statusColors: Record<AppointmentStatus, string>;
-    onClose: () => void
+    statusColors: Record<AppointmentStatus, string>
 }
 
 export function StatusUpdateDialog({
     appointment,
-    open,
-    onOpenChange,
     statusColors,
-    onClose
 }: StatusUpdateDialogProps) {
     const queryClient = useQueryClient()
     const t = useTranslations("Appointments")
     const commonT = useTranslations("Common")
+
+    const { visible: open, handleClose, handleStateChange } = useVisibility()
     const [selectedStatus, setSelectedStatus] = useState<AppointmentStatus>(appointment.status)
+
+    const isLocked = LOCKED_STATUSES.includes(appointment.status)
 
     const statuses: AppointmentStatus[] = [
         "pending",
@@ -57,20 +53,33 @@ export function StatusUpdateDialog({
             if (res.success) {
                 queryClient.invalidateQueries({ queryKey: ["appointments"] })
                 queryClient.invalidateQueries({ queryKey: ["appointments-stats"] })
-                onClose()
+                handleClose()
             }
         },
     })
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={handleStateChange}>
+            <DialogTrigger asChild>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={isLocked}
+                >
+                    <div className="flex items-center gap-1.5 p-1 px-1.5 rounded-lg border border-border/50 bg-secondary/20 hover:bg-secondary/40 transition-colors cursor-pointer" >
+                        <Badge className={`${statusColors[appointment.status] || "bg-secondary"} border-0`}>{t(`statuses.${appointment.status}`)}</Badge>
+                        <Edit2 className="w-3 h-3 text-muted-foreground" />
+                    </div>
+                </Button>
+            </DialogTrigger>
+
             <DialogContent className="bg-card border-border max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="text-foreground flex items-center gap-2 text-xl font-black">
-                        {t("stats.todayTotal") ? "Update Status" : "Update Status"}
+                    <DialogTitle className="text-foreground text-xl font-black">
+                        {t("statusDialog.title")}
                     </DialogTitle>
                     <DialogDescription className="text-muted-foreground pt-1">
-                        Select the new status for this appointment.
+                        {t("statusDialog.description")}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -101,7 +110,7 @@ export function StatusUpdateDialog({
                 <DialogFooter className="gap-2">
                     <Button
                         variant="ghost"
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="rounded-xl font-bold"
                     >
                         {commonT("cancel")}
@@ -111,11 +120,10 @@ export function StatusUpdateDialog({
                         disabled={mutation.isPending || selectedStatus === appointment.status}
                         className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 rounded-xl font-black shadow-lg shadow-primary/20 min-w-32"
                     >
-                        {mutation.isPending ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            "Update Status"
-                        )}
+                        {mutation.isPending
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : t("statusDialog.submit")
+                        }
                     </Button>
                 </DialogFooter>
             </DialogContent>

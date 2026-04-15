@@ -420,12 +420,21 @@
       "selectType": "Select type",
       "timeSlot": "Time Slot",
       "selectTime": "Select time",
+      "selectDoctorFirst": "Select a doctor first",
+      "noSlotsAvailable": "No slots available this day",
       "duration": "Duration",
       "selectDuration": "Select duration",
       "notes": "Notes (Optional)",
       "notesPlaceholder": "Add any additional notes for this appointment...",
       "create": "Create Appointment",
       "success": "Appointment scheduled successfully!"
+    },
+    "statusDialog": {
+      "trigger": "Update Status",
+      "title": "Update Appointment Status",
+      "description": "Select the new status for this appointment.",
+      "submit": "Update Status",
+      "lockedMessage": "Status cannot be changed once the patient is in chair or appointment is completed."
     },
     "statuses": {
       "scheduled": "Scheduled",

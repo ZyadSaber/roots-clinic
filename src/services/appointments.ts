@@ -71,9 +71,8 @@ export async function createAppointment(
     patient_id,
     doctor_id,
     appointment_date,
-    start_time,
-    duration,
-    type,
+    duration_mins,
+    procedure_type,
     notes,
   } = payload;
 
@@ -81,25 +80,23 @@ export async function createAppointment(
     const result = await queryOne<Appointment>({
       sql: `
         INSERT INTO appointments (
-          patient_id, 
-          doctor_id, 
-          appointment_date, 
-          start_time, 
-          duration, 
-          type, 
-          status, 
+          patient_id,
+          doctor_id,
+          appointment_date,
+          duration_mins,
+          procedure_type,
+          status,
           notes
         )
-        VALUES ($1, $2, $3, $4, $5, $6, 'scheduled', $7)
+        VALUES ($1, $2, $3, $4, $5, 'pending', $6)
         RETURNING *
       `,
       params: [
         patient_id,
         doctor_id,
         appointment_date,
-        start_time,
-        duration,
-        type,
+        duration_mins,
+        procedure_type,
         notes || "",
       ],
     });
