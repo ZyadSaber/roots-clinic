@@ -83,19 +83,27 @@ completed  ←── doctor marks done; completed_at recorded
 ```
 
 - `in_chair` status signals doctor is actively with patient — prevents double-booking and enables waiting time vs. treatment time metrics
-- Doctor works in the appointments detail view (doctor-facing view, planned future page)
-- Radiology assets are uploaded to storage, URL stored in `radiology_assets` with `image_type` (panoramic / bitewing / periapical)
+- Doctor works in `/appointments/[doctorId]` — the doctor-facing appointments detail page (implemented)
+- **Start Visit flow**: doctor clicks "Start Visit" on an `arrived` row → `StartVisitDialog` confirms → `executeTransaction` atomically updates status to `in_chair` and inserts a `visit_records` row
+- **Visit In Progress modal** (`VisitInProgressModal`) auto-opens and locks whenever an `in_chair` appointment exists; cannot be dismissed except via:
+  - **Send for Radiology** — stores appointment ID in `localStorage` (`pendingRadiology`), closes modal temporarily so another patient can be processed
+  - **End Visit & Save** — saves all EHR fields then marks appointment `completed`
+- The modal persists across page refresh: on mount, if any appointment is still `in_chair` and not in `pendingRadiology`, the modal reopens with the same visit
+- Radiology assets uploaded by radiology staff appear live in the modal's right panel (polled every 15 s via `refetchInterval`)
+- `radiology_assets` stores `image_url`, `image_type` (panoramic / bitewing / periapical), `notes`, `taken_at`; linked to `visit_id`
 
 ---
 
 ## Phase 4 — EHR / Records
 
-**Written by doctor on appointment completion.**
+**Written by doctor during/on appointment completion.**
 
-A `visit_record` row is created and linked to:
-- `appointment_id` → the completed appointment
+A `visit_record` row is created **when the visit starts** (`in_chair` transition) and linked to:
+- `appointment_id` → the active appointment
 - `patient_id` → the patient
 - `doctor_id` → the treating doctor
+
+Fields are filled incrementally inside `VisitInProgressModal` and saved via **Save Notes** or all-at-once on **End Visit**.
 
 ### Fields captured
 
@@ -106,6 +114,11 @@ A `visit_record` row is created and linked to:
 | `procedure_notes` | Detailed clinical notes (supports voice-to-text via Groq Whisper → Gemini) |
 | `prescription` | Medication and dosage |
 | `follow_up_date` | Next appointment suggestion |
+
+### Service layer
+- `getVisitByAppointmentId(appointmentId)` — full JOIN with doctors / staff / specialties / appointments
+- `getRadiologyByVisitId(visitId)` — returns all radiology assets for a visit
+- `updateVisitRecord(visitId, data)` — COALESCE partial update; `follow_up_date` set directly (nullable)
 
 ### Inventory deduction (parallel)
 
@@ -229,10 +242,10 @@ draft ──► pending ──► partial ──► paid
 ## Module Build Order (Remaining)
 
 ```
-records (EHR detail view)
+radiology (upload UI — staff side)
     │
     ▼
-radiology
+records (EHR history/detail view per patient)
     │
     ▼
 inventory
@@ -243,3 +256,13 @@ finance (+ billing as tab)
     ▼
 dashboard (last — aggregates everything)
 ```
+
+## Completed Modules
+
+| Module | Status | Notes |
+|---|---|---|
+| Auth | ✅ | Username login, JWT, role-gated access |
+| Patients | ✅ | Registration, search, alerts |
+| Appointments (admin) | ✅ | Full list + calendar grid, status management, export |
+| Appointments (doctor) | ✅ | `/appointments/[doctorId]` — start visit, locked modal, EHR form, radiology viewer |
+| Doctors / Users / Staff | ✅ | CRUD, specialties, permissions |

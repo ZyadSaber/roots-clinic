@@ -6,6 +6,7 @@ import { User as UserIcon, Stethoscope } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { StatusUpdateDialog } from "@/components/appointments/StatusUpdateDialog"
+import { StartVisitDialog } from "@/components/appointments/StartVisitDialog"
 import { Appointment } from "@/types/appointments"
 import { statusColors, priorityColors, ACTIONABLE_STATUSES as ACTIONABLE } from "@/constants/appointments"
 
@@ -31,9 +32,8 @@ export function AppointmentListView({ appointments, variant = "admin", onSelect,
                     <div
                         key={a.id}
                         onClick={() => ACTIONABLE.includes(a.status) && onSelect?.(a)}
-                        className={`flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card transition-all ${
-                            ACTIONABLE.includes(a.status) ? "cursor-pointer hover:border-primary/30 hover:bg-accent/30" : "opacity-70"
-                        }`}
+                        className={`flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card transition-all ${ACTIONABLE.includes(a.status) ? "cursor-pointer hover:border-primary/30 hover:bg-accent/30" : "opacity-70"
+                            }`}
                     >
                         <div className="text-center w-14 shrink-0">
                             <p className="text-sm font-black tabular-nums text-foreground">
@@ -59,9 +59,15 @@ export function AppointmentListView({ appointments, variant = "admin", onSelect,
                             {a.status.replace("_", " ")}
                         </Badge>
                         {ACTIONABLE.includes(a.status) && (
-                            <Button size="sm" variant="outline" className="rounded-xl font-bold text-xs shrink-0">
-                                {a.status === "confirmed" ? "Mark Arrived" : a.status === "arrived" ? "Start Visit" : "Complete"}
-                            </Button>
+                            a.status === "arrived"
+                                ? <StartVisitDialog appointment={a} />
+                                : a.status === "in_chair"
+                                    ? <Button size="sm" variant="outline" onClick={() => onSelect?.(a)} className="rounded-xl font-bold text-xs shrink-0 border-amber-500/40 text-amber-600 hover:bg-amber-500/10">
+                                        Resume Visit
+                                    </Button>
+                                    : <Button size="sm" variant="outline" className="rounded-xl font-bold text-xs shrink-0">
+                                        Mark Arrived
+                                    </Button>
                         )}
                     </div>
                 ))}

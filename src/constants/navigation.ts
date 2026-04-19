@@ -21,6 +21,7 @@ export const MANAGEMENT_NAV_ITEMS: NavItemConfig[] = [
     href: "appointments",
     descriptionKey: "appointmentsDesc",
     hasCount: true,
+    uesDoctorParam: true,
   },
   {
     iconName: "image",

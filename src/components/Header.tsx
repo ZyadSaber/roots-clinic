@@ -76,7 +76,11 @@ export function Header() {
         const parts = pathname.split('/').filter(Boolean)
         const lastPart = parts[parts.length - 1]
         if (!lastPart) return "Command Center"
-        if (/^\d+$/.test(lastPart)) return `#${lastPart}`
+        // If last segment is a dynamic param (numeric ID, UUID, etc.), use parent segment
+        if (!/^[a-z][a-z-]*$/i.test(lastPart)) {
+            const parentPart = parts[parts.length - 2]
+            if (parentPart) return tNav(`${parentPart}Title`) || parentPart.charAt(0).toUpperCase() + parentPart.slice(1)
+        }
         return tNav(`${lastPart}Title`) || lastPart.charAt(0).toUpperCase() + lastPart.slice(1)
     }
 

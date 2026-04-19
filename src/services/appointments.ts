@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { queryMany, queryOne, execute } from "@/lib/pg";
+import { queryMany, queryOne, execute, executeTransaction } from "@/lib/pg";
 import {
   Appointment,
   AppointmentPayload,
@@ -164,6 +164,37 @@ export async function getDoctorAppointmentStats(
   });
 }
 
+export async function startVisit(
+  appointmentId: string,
+  patientId: string,
+  doctorId: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await executeTransaction(async (client) => {
+      await client.query(
+        `UPDATE appointments SET
+           status     = 'in_chair'::appointment_status,
+           updated_at = NOW()
+         WHERE id = $1`,
+        [appointmentId],
+      );
+      await client.query(
+        `INSERT INTO visit_records (appointment_id, patient_id, doctor_id)
+         VALUES ($1, $2, $3)`,
+        [appointmentId, patientId, doctorId],
+      );
+    });
+    revalidatePath("/appointments");
+    return { success: true };
+  } catch (error) {
+    console.error("Error starting visit:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Database error",
+    };
+  }
+}
+
 export async function updateAppointmentStatus(
   id: string,
   status: string,
@@ -172,9 +203,9 @@ export async function updateAppointmentStatus(
     const result = await execute({
       sql: `
         UPDATE appointments SET
-          status       = $1,
-          arrived_at   = CASE WHEN $1 = 'arrived'   THEN COALESCE(arrived_at,   NOW()) ELSE arrived_at   END,
-          completed_at = CASE WHEN $1 = 'completed' THEN COALESCE(completed_at, NOW()) ELSE completed_at END,
+          status       = $1::appointment_status,
+          arrived_at   = CASE WHEN $1::appointment_status = 'arrived'   THEN COALESCE(arrived_at,   NOW()) ELSE arrived_at   END,
+          completed_at = CASE WHEN $1::appointment_status = 'completed' THEN COALESCE(completed_at, NOW()) ELSE completed_at END,
           updated_at   = NOW()
         WHERE id = $2
       `,

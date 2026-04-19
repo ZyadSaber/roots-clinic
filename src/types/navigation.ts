@@ -15,4 +15,5 @@ export interface NavItemConfig {
   href: Module;
   descriptionKey: string; // Key for translation or just a string
   hasCount?: boolean;
+  uesDoctorParam?: boolean;
 }

@@ -61,9 +61,14 @@ Handles Supabase session persistence (SSR), i18n locale routing, and redirect lo
 | Path | Purpose |
 |------|---------|
 | `src/app/[locale]/` | Page routes (appointments, dashboard, doctors, finance, inventory, patients, radiology, records, users) |
+| `src/app/[locale]/appointments/[id]/` | Doctor-specific appointments page (doctor_id as `id`) |
 | `src/services/` | All server actions (data operations per domain) |
+| `src/services/visits.ts` | `getVisitByAppointmentId`, `getRadiologyByVisitId`, `updateVisitRecord` |
 | `src/store/slices/` | Redux slices: auth, doctors, patient, appointment, staff, uiShared |
 | `src/components/` | UI components organized by domain + `shared/` + `ui/` (shadcn base) |
+| `src/components/appointments/AppointmentTabs.tsx` | Reusable list + calendar tabs (shared by admin and doctor pages) |
+| `src/components/appointments/StartVisitDialog.tsx` | Confirmation dialog; atomically sets `in_chair` + creates `visit_records` row |
+| `src/components/appointments/VisitInProgressModal.tsx` | Locked session modal: clinical EHR form + radiology viewer; cannot be dismissed |
 | `src/lib/` | Standalone helpers (`pg.ts`, `timeSlots.ts`, `localize.ts`, etc.) |
 | `src/lib/supabase/` | Supabase client (server + browser variants) |
 | `src/types/` | TypeScript types per domain |
@@ -92,12 +97,16 @@ Staff log in with username → Supabase Auth → Redux hydrated → role-gated m
 
 ### Phase 3 — Clinical
 `arrived → in_chair → completed`
-- `in_chair` prevents double-booking and enables waiting/treatment time metrics
-- Radiology sub-flow: upload X-ray → `radiology_assets` (types: panoramic / bitewing / periapical), linked to `visit_id`
-- `completed_at` recorded when doctor marks done
+- **Start Visit**: doctor clicks "Start Visit" on an `arrived` appointment → `StartVisitDialog` confirms → atomic transaction sets status to `in_chair` and inserts a `visit_records` row
+- `in_chair` auto-opens `VisitInProgressModal` (locked — cannot be dismissed without action)
+  - Modal persists across page refresh: if any appointment is still `in_chair` on mount, modal re-opens automatically
+  - Two-column layout: **Clinical Notes** (diagnosis, procedure done, procedure notes, prescription, follow-up date) | **Radiology** (images polled every 15 s)
+  - Actions: **Send for Radiology** (dismisses modal temporarily, stores appointment ID in `localStorage`) | **End Visit & Save** (saves EHR fields + marks `completed`)
+- Radiology sub-flow: upload X-ray → `radiology_assets` (types: panoramic / bitewing / periapical), linked to `visit_id`; images appear live in modal
+- `completed_at` recorded when doctor ends visit
 
 ### Phase 4 — EHR / Records
-`visit_records` row created on appointment completion, linked to `appointment_id`, `patient_id`, `doctor_id`. Captures diagnosis, procedure, clinical notes (voice-to-text via Groq Whisper → Gemini planned), prescription, follow-up date.
+`visit_records` row created when visit starts (`in_chair`), linked to `appointment_id`, `patient_id`, `doctor_id`. Fields filled during the visit: diagnosis, procedure_done, procedure_notes, prescription, follow_up_date. Saved incrementally via **Save Notes** or all-at-once on **End Visit**.
 
 Parallel: supplies used → `inventory_movements` (negative qty) → `inventory_items.current_stock` updated → triggers `low_stock` / `critical` / `out_of_stock` status if at or below `reorder_level`.
 
@@ -120,5 +129,14 @@ any status ──► no_show
 
 ## Module Build Order (Remaining)
 ```
-records (EHR detail view) → radiology → inventory → finance (+ billing tab) → dashboard
+radiology (upload UI) → records (EHR detail/history view) → inventory → finance (+ billing tab) → dashboard
 ```
+
+## Doctor Appointments Flow (Implemented)
+`/appointments/[doctorId]` is the doctor-facing view:
+- Lists confirmed / arrived / in_chair / completed appointments for that doctor on the selected date
+- Stat cards: confirmed, arrived, in_chair, completed
+- `StartVisitDialog` on `arrived` rows → atomic `in_chair` + `visit_records` creation
+- `VisitInProgressModal` auto-opens for any `in_chair` appointment; locked until End Visit or Send for Radiology
+- `pendingRadiology` set persisted in `localStorage` to track patients sent for imaging
+- `AppointmentTabs` (list only, `showCalendar=false`) reused from admin page
