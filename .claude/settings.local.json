@@ -3,7 +3,11 @@
     "allow": [
       "Bash(git diff *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npx tsc *)",
+      "Bash(git -C /home/zyad/roots-clinic status)",
+      "Bash(git -C /home/zyad/roots-clinic diff --stat HEAD)",
+      "Bash(git *)"
     ]
   }
 }
