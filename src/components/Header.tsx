@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "@/i18n/routing"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "./mode-toggle"
 import { LanguageSwitcher } from "./LanguageSwitcher"
-import { LogOut, Calendar, Search, Bell, HelpCircle, User, Clock, Maximize, Minimize } from "lucide-react"
+import { LogOut, Calendar, Search, Bell, HelpCircle, User, Clock, Maximize, Minimize, Lock } from "lucide-react"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
@@ -23,6 +23,7 @@ import {
 import { useDispatch, useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import { setSearchQuery } from "@/store/slices/uiSharedSlice"
+import { useSessionLock } from "@/components/providers/SessionLockProvider"
 
 export function Header() {
     const t = useTranslations("Common")
@@ -80,6 +81,7 @@ export function Header() {
     }
 
     const { activeNotifications } = useSelector((state: RootState) => state.uiShared)
+    const { lock } = useSessionLock()
 
     return (
         <header className="h-16 flex items-center justify-between px-6 bg-background border-b border-border/50 sticky top-0 z-40 backdrop-blur-md supports-backdrop-filter:bg-background/80">
@@ -138,6 +140,15 @@ export function Header() {
                         title={isFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                     >
                         {isFullScreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors"
+                        onClick={lock}
+                        title="Lock session"
+                    >
+                        <Lock className="w-5 h-5" />
                     </Button>
                     <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors">
                         <HelpCircle className="w-5 h-5" />

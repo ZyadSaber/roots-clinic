@@ -115,13 +115,69 @@ export async function createAppointment(
   }
 }
 
+export async function getAppointmentsByDoctor(
+  doctorId: string,
+  date: Date,
+): Promise<Appointment[]> {
+  const sql = `
+    SELECT
+      a.id,
+      a.patient_id,
+      p.full_name AS patient_name,
+      p.patient_code,
+      a.doctor_id,
+      s.full_name AS doctor_name,
+      a.appointment_date,
+      a.arrived_at,
+      a.completed_at,
+      a.duration_mins,
+      a.procedure_type,
+      a.status,
+      a.notes,
+      a.priority
+    FROM appointments a
+    JOIN patients p ON p.id = a.patient_id
+    JOIN doctors d ON d.id = a.doctor_id
+    JOIN staff s ON s.id = d.staff_id
+    WHERE a.doctor_id = $1 AND DATE(a.appointment_date) = $2
+    ORDER BY a.appointment_date ASC
+  `;
+  return queryMany<Appointment>({ sql, params: [doctorId, date] });
+}
+
+export async function getDoctorAppointmentStats(
+  doctorId: string,
+  date: Date,
+): Promise<{ confirmed: number; arrived: number; in_chair: number; completed: number; total: number }> {
+  return queryOne({
+    sql: `
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'confirmed') AS confirmed,
+        COUNT(*) FILTER (WHERE status = 'arrived')   AS arrived,
+        COUNT(*) FILTER (WHERE status = 'in_chair')  AS in_chair,
+        COUNT(*) FILTER (WHERE status = 'completed') AS completed,
+        COUNT(*) AS total
+      FROM appointments
+      WHERE doctor_id = $1 AND DATE(appointment_date) = $2
+    `,
+    params: [doctorId, date],
+  });
+}
+
 export async function updateAppointmentStatus(
   id: string,
   status: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const result = await execute({
-      sql: `UPDATE appointments SET status = $1, updated_at = NOW() WHERE id = $2`,
+      sql: `
+        UPDATE appointments SET
+          status       = $1,
+          arrived_at   = CASE WHEN $1 = 'arrived'   THEN COALESCE(arrived_at,   NOW()) ELSE arrived_at   END,
+          completed_at = CASE WHEN $1 = 'completed' THEN COALESCE(completed_at, NOW()) ELSE completed_at END,
+          updated_at   = NOW()
+        WHERE id = $2
+      `,
       params: [status, id],
     });
 

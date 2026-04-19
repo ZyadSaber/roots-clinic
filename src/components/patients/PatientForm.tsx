@@ -35,6 +35,7 @@ interface AddPatientModuleProps {
     open: boolean
     onClose: () => void;
     selectedPatient?: PatientSummary
+    onNewPatient?: (patientId: string) => void
 }
 
 function calculateAge(dob: Date): number {
@@ -50,7 +51,7 @@ function calculateAge(dob: Date): number {
 type Step = "personal" | "contact" | "insurance"
 const steps: Step[] = ["personal", "contact", "insurance"]
 
-export function PatientForm({ open, onClose, selectedPatient }: AddPatientModuleProps) {
+export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: AddPatientModuleProps) {
     const t = useTranslations("Patients.form")
     const [step, setStep] = useState<Step>("personal")
 
@@ -64,6 +65,9 @@ export function PatientForm({ open, onClose, selectedPatient }: AddPatientModule
                 return toast.error(t("error"))
             }
             queryClient.invalidateQueries({ queryKey: ['patients'] })
+            if (!selectedPatient && res.patient_id) {
+                onNewPatient?.(res.patient_id)
+            }
             resetForm()
             onClose()
             toast.success(t("success"))

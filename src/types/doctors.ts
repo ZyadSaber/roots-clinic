@@ -47,6 +47,16 @@ export type DoctorFormData = {
   }[];
 };
 
+export interface DoctorWithSchedule {
+  id: string;
+  name: string;
+  en: string;
+  ar: string;
+  status: DoctorStatus;
+  start_time: string;
+  end_time: string;
+}
+
 export interface DoctorState {
   // The lightweight list used across modules (booking form, command center)
   availableDoctors: DoctorSummary[];

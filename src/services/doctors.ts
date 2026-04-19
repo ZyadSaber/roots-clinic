@@ -7,6 +7,7 @@ import {
   DoctorSummary,
   DoctorFormData,
   DoctorAppointments,
+  DoctorWithSchedule,
 } from "@/types/doctors";
 import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
@@ -60,6 +61,42 @@ export async function fetchAvailableDoctors(): Promise<DoctorSummary[]> {
     ORDER BY s.full_name ASC
   `;
   return (await queryMany({ sql })) as DoctorSummary[];
+}
+
+export async function getDoctorIdByStaffId(
+  staffId: string,
+): Promise<string | null> {
+  const row = await queryOne<{ id: string }>({
+    sql: `SELECT id FROM doctors WHERE staff_id = $1 LIMIT 1`,
+    params: [staffId],
+  });
+  return row?.id ?? null;
+}
+
+export async function fetchDoctorsWithScheduleForDay(
+  date: Date,
+): Promise<DoctorWithSchedule[]> {
+  const dayOfWeek = date.getDay();
+  const sql = `
+    SELECT
+      d.id,
+      s.full_name AS name,
+      sp.english_name AS en,
+      sp.arabic_name AS ar,
+      d.status,
+      ds.start_time,
+      ds.end_time
+    FROM doctors d
+    JOIN staff s ON d.staff_id = s.id
+    LEFT JOIN specialties sp ON d.specialty_id = sp.id
+    INNER JOIN doctor_schedules ds
+      ON ds.doctor_id = d.id
+      AND ds.day_of_week = $1
+      AND ds.is_active = TRUE
+    WHERE s.is_active = TRUE
+    ORDER BY s.full_name ASC
+  `;
+  return (await queryMany({ sql, params: [dayOfWeek] })) as DoctorWithSchedule[];
 }
 
 export async function getDoctorSchedule(

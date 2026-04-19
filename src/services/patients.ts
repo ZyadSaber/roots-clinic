@@ -1,6 +1,6 @@
 "use server";
 
-import { execute, pool, queryMany } from "@/lib/pg";
+import { execute, pool, query, queryMany } from "@/lib/pg";
 import {
   InvoiceRecord,
   MedicalAlert,
@@ -143,7 +143,7 @@ export async function deletePatient(patientId: string) {
 
 export async function createPatient(formData: PatientFormValues) {
   try {
-    await execute({
+    const rows = await query<{ patient_id: string }>({
       sql: `INSERT INTO patients (
         full_name,
         phone,
@@ -154,10 +154,11 @@ export async function createPatient(formData: PatientFormValues) {
         emergency_contact_phone,
         insurance_provider,
         insurance_number,
-        notes
+        notes,
+        dob
       ) VALUES (
-        $1, 
-        $2, 
+        $1,
+        $2,
         $3,
         $4,
         $5,
@@ -167,7 +168,7 @@ export async function createPatient(formData: PatientFormValues) {
         $9,
         $10,
         $11
-      )`,
+      ) RETURNING id AS patient_id`,
       params: [
         formData.full_name,
         formData.phone,
@@ -185,7 +186,7 @@ export async function createPatient(formData: PatientFormValues) {
 
     revalidatePath("/patients");
 
-    return { success: true };
+    return { success: true, patient_id: rows[0].patient_id };
   } catch (err) {
     console.error("[createPatient]", err);
     return {

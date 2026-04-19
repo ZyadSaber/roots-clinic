@@ -2,49 +2,26 @@
 
 import { useMemo, useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { format } from "date-fns"
-import { z } from "zod"
-import {
-    User as UserIcon,
-    UserPlus,
-    Calendar as CalendarIcon,
-    Phone,
-    Mail,
-    Check,
-    Plus
-} from "lucide-react"
+import { User as UserIcon, UserPlus, Calendar as CalendarIcon, Phone, Mail, Check, Plus } from "lucide-react"
 import { useVisibility, useFormManager } from "@/hooks"
-
-// Services
 import { createAppointment } from "@/services/appointments"
 import { fetchAllPatients } from "@/services/patients"
-import { fetchAvailableDoctors, fetchDoctorScheduleForDay } from "@/services/doctors"
-
-// Components
+import { fetchDoctorsWithScheduleForDay } from "@/services/doctors"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import Textarea from "@/components/ui/textarea"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { SelectField } from "@/components/ui/select"
 import { PatientForm } from "@/components/patients/PatientForm"
-
-// Types
+import { appointmentSchema } from "@/validation/appointments"
+import { buildTimeSlots, buildTimestamp } from "@/lib/timeSlots"
 import { AppointmentPayload } from "@/types/appointments"
 import { PatientSummary } from "@/types/patients"
-import { DoctorSummary } from "@/types/doctors"
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+import { DoctorWithSchedule } from "@/types/doctors"
 
 const procedureTypes = [
     "Check-up",
@@ -57,7 +34,6 @@ const procedureTypes = [
     "Vaccination",
 ]
 
-// duration label → minutes integer
 const durations: { label: string; mins: number }[] = [
     { label: "15 min", mins: 15 },
     { label: "30 min", mins: 30 },
@@ -66,69 +42,16 @@ const durations: { label: string; mins: number }[] = [
     { label: "90 min", mins: 90 },
 ]
 
-/** Generates 30-min time slots between "HH:MM:SS" start and end times */
-function buildTimeSlots(startTime: string, endTime: string): string[] {
-    const toMins = (t: string) => {
-        const [h, m] = t.split(":").map(Number)
-        return h * 60 + m
-    }
-    const toLabel = (mins: number) => {
-        const h24 = Math.floor(mins / 60)
-        const m = mins % 60
-        const period = h24 >= 12 ? "PM" : "AM"
-        const h12 = h24 % 12 === 0 ? 12 : h24 % 12
-        return `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`
-    }
-    const slots: string[] = []
-    for (let cur = toMins(startTime); cur < toMins(endTime); cur += 30) {
-        slots.push(toLabel(cur))
-    }
-    return slots
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Combines a Date and a "09:30 AM" time string into a full ISO timestamp */
-function buildTimestamp(date: Date, timeSlot: string): string {
-    const [time, period] = timeSlot.split(" ")
-    const [hStr, mStr] = time.split(":")
-    let hours = parseInt(hStr, 10)
-    const minutes = parseInt(mStr, 10)
-    if (period === "PM" && hours !== 12) hours += 12
-    if (period === "AM" && hours === 12) hours = 0
-    const dt = new Date(date)
-    dt.setHours(hours, minutes, 0, 0)
-    return dt.toISOString()
-}
-
-// ─── Zod schema ───────────────────────────────────────────────────────────────
-
-const appointmentSchema = z.object({
-    patient_id: z.string().min(1, "Please select a patient"),
-    doctor_id: z.string().min(1, "Please select a doctor"),
-    procedure_type: z.string().min(1, "Please select an appointment type"),
-    start_time: z.string().min(1, "Please select a time slot"),
-    duration_label: z.string().min(1, "Please select a duration"),
-    notes: z.string().optional().or(z.literal("")),
-})
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
     const queryClient = useQueryClient()
     const t = useTranslations("Appointments")
     const commonT = useTranslations("Common")
+    const locale = useLocale()
 
     const { visible, handleOpen, handleClose, handleStateChange } = useVisibility()
     const [showNewPatient, setShowNewPatient] = useState(false)
 
-    const {
-        formData,
-        resetForm,
-        handleToggle,
-        validate,
-        errors,
-    } = useFormManager({
+    const { formData, resetForm, handleToggle, handleFieldChange, handleChangeMultiInputs, validate, errors } = useFormManager({
         initialData: {
             patient_id: "",
             doctor_id: "",
@@ -147,46 +70,45 @@ export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
         resetForm()
     }
 
-    // ── Data fetching (only when dialog is open) ──────────────────────────────
-
     const { data: patients = [] } = useQuery<PatientSummary[]>({
         queryKey: ["patients"],
         queryFn: fetchAllPatients,
         enabled: visible,
     })
 
-    // Uses fetchAvailableDoctors — returns doctors.id (not staff.id)
-    const { data: doctors = [] } = useQuery<DoctorSummary[]>({
-        queryKey: ["available-doctors"],
-        queryFn: fetchAvailableDoctors,
+    const { data: rawDoctors = [] } = useQuery<DoctorWithSchedule[]>({
+        queryKey: ["doctors-with-schedule", initialDate.toDateString()],
+        queryFn: () => fetchDoctorsWithScheduleForDay(initialDate),
         enabled: visible,
     })
 
-    // Fetch the selected doctor's schedule for initialDate's day-of-week
-    const { data: doctorSchedule } = useQuery({
-        queryKey: ["doctor-schedule", doctor_id, initialDate.toDateString()],
-        queryFn: () => fetchDoctorScheduleForDay(doctor_id, initialDate),
-        enabled: visible && !!doctor_id,
-    })
-
-    const availableTimeSlots = useMemo(
-        () => doctorSchedule
-            ? buildTimeSlots(doctorSchedule.start_time, doctorSchedule.end_time)
-            : [],
-        [doctorSchedule]
+    const doctorOptions = useMemo(
+        () => rawDoctors.map(d => ({
+            key: d.id,
+            label: locale === "ar" ? (d.ar || d.name) : d.name,
+            schedule: buildTimeSlots(d.start_time, d.end_time),
+        })),
+        [rawDoctors, locale]
     )
 
-    const handleDoctorChange = (value: string) => {
-        handleToggle("doctor_id")(value)
-        handleToggle("start_time")("") // clear time slot when doctor changes
-    }
+    const availableTimeSlots = useMemo(
+        () => doctorOptions.find(d => d.key === doctor_id)?.schedule ?? [],
+        [doctorOptions, doctor_id]
+    )
 
     const selectedPatientData = useMemo(
         () => patients.find(p => p.patient_id === patient_id),
         [patients, patient_id]
     )
 
-    // ── Mutation ──────────────────────────────────────────────────────────────
+    const handleAddNewPatient = (patientId: string) => {
+        handleFieldChange({ name: "patient_id", value: patientId })
+        setShowNewPatient(false)
+    }
+
+    const handleDoctorChange = (value: string) => {
+        handleChangeMultiInputs({ doctor_id: value, start_time: "" })
+    }
 
     const createMutation = useMutation({
         mutationFn: createAppointment,
@@ -200,13 +122,10 @@ export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
 
     const handleCreateAppointment = () => {
         if (!validate()) return
-
         const duration_mins = durations.find(d => d.label === duration_label)?.mins ?? 30
-
         const payload: AppointmentPayload = {
             patient_id,
             doctor_id,
-            // Combines initialDate + selected time slot into a single TIMESTAMP
             appointment_date: buildTimestamp(initialDate, start_time),
             duration_mins,
             procedure_type,
@@ -214,8 +133,6 @@ export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
         }
         createMutation.mutate(payload)
     }
-
-    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <>
@@ -242,7 +159,6 @@ export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
                     </DialogHeader>
 
                     <div className="space-y-8 py-6">
-                        {/* Patient Selection */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <Label className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -306,7 +222,6 @@ export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
                             )}
                         </div>
 
-                        {/* Appointment Details */}
                         <div className="space-y-4">
                             <Label className="text-sm font-bold text-foreground flex items-center gap-2">
                                 <div className="w-1 h-4 bg-primary rounded-full" />
@@ -320,10 +235,7 @@ export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
                                     name="doctor_id"
                                     value={doctor_id}
                                     onValueChange={handleDoctorChange}
-                                    options={doctors.map((d: DoctorSummary) => ({
-                                        key: d.id, // doctors.id — correct FK for appointments.doctor_id
-                                        label: `${d.name}${d.en ? ` — ${d.en}` : ""}`,
-                                    }))}
+                                    options={doctorOptions}
                                     showSearch
                                     error={errors.doctor_id}
                                     className="bg-secondary/50 border-border h-12 rounded-xl"
@@ -412,10 +324,10 @@ export function AppointmentDialog({ initialDate }: { initialDate: Date }) {
                 </DialogContent>
             </Dialog>
 
-            {/* New Patient Form — opens without closing the appointment dialog */}
             <PatientForm
                 open={showNewPatient}
                 onClose={() => setShowNewPatient(false)}
+                onNewPatient={handleAddNewPatient}
             />
         </>
     )

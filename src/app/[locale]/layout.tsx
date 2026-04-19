@@ -31,6 +31,7 @@ import { Header } from "@/components/Header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/server";
+import { SessionLockProvider } from "@/components/providers/SessionLockProvider";
 
 export default async function RootLayout({
   children,
@@ -67,16 +68,18 @@ export default async function RootLayout({
               <QueryProvider>
                 <StoreInitializer initialUser={user} />
                 <TooltipProvider>
-                  <SidebarProvider side={locale === 'ar' ? 'right' : 'left'}>
-                    {user && <AppSidebar side={locale === 'ar' ? 'right' : 'left'} />}
-                    <SidebarInset className="flex flex-col">
-                      {user && <Header />}
-                      <main className="flex-1 overflow-auto bg-accent/20">
-                        {children}
-                      </main>
-                    </SidebarInset>
-                  </SidebarProvider>
-                  <Toaster />
+                  <SessionLockProvider>
+                    <SidebarProvider side={locale === 'ar' ? 'right' : 'left'}>
+                      {user && <AppSidebar side={locale === 'ar' ? 'right' : 'left'} />}
+                      <SidebarInset className="flex flex-col">
+                        {user && <Header />}
+                        <main className="flex-1 overflow-auto bg-accent/20">
+                          {children}
+                        </main>
+                      </SidebarInset>
+                    </SidebarProvider>
+                    <Toaster />
+                  </SessionLockProvider>
                 </TooltipProvider>
               </QueryProvider>
             </StoreProvider>
