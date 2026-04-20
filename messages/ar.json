@@ -469,6 +469,43 @@
     "priorities": {
       "normal": "عادي",
       "urgent": "عاجل"
+    },
+    "record": "السجل",
+    "visitModal": {
+      "titleInProgress": "جلسة قيد التنفيذ",
+      "titleCompleted": "زيارة مكتملة",
+      "descInProgress": "الجلسة مقفلة · أكمل الزيارة أو أرسل للأشعة للمتابعة",
+      "descCompleted": "للقراءة فقط · سجل الزيارة",
+      "completedBadge": "الزيارة مكتملة",
+      "urgent": "عاجل",
+      "clinicalNotes": "الملاحظات السريرية",
+      "loading": "جارٍ تحميل سجل الزيارة…",
+      "diagnosis": "التشخيص",
+      "diagnosisPlaceholder": "أدخل التشخيص…",
+      "procedureDone": "الإجراء المنجز",
+      "procedureDonePlaceholder": "مثال: حشو مركب #14",
+      "followUpDate": "تاريخ المتابعة",
+      "procedureNotes": "ملاحظات الإجراء",
+      "procedureNotesPlaceholder": "الملاحظات السريرية، المضاعفات، التخدير المستخدم…",
+      "prescription": "الوصفة الطبية",
+      "prescriptionPlaceholder": "الأدوية، الجرعة، المدة…",
+      "saveNotes": "حفظ الملاحظات",
+      "radiology": "الأشعة",
+      "noImages": "لا توجد صور بعد",
+      "noImagesDesc": "ستظهر الصور التي يرفعها فريق الأشعة هنا تلقائياً",
+      "sendForRadiology": "إرسال للأشعة",
+      "endVisit": "إنهاء الزيارة وحفظ",
+      "close": "إغلاق",
+      "toastSaved": "تم حفظ الملاحظات",
+      "toastSaveFailed": "فشل الحفظ",
+      "toastCompleted": "اكتملت الزيارة — {name}",
+      "toastEndFailed": "فشل إنهاء الزيارة",
+      "toastError": "حدث خطأ ما",
+      "print": "طباعة",
+      "exportPdf": "تصدير PDF",
+      "exportExcel": "تصدير Excel",
+      "field": "الحقل",
+      "value": "القيمة"
     }
   }
 }

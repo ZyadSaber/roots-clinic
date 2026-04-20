@@ -2,7 +2,7 @@
 
 import { format } from "date-fns"
 import { useTranslations } from "next-intl"
-import { User as UserIcon, Stethoscope } from "lucide-react"
+import { User as UserIcon, Stethoscope, ClipboardList } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { StatusUpdateDialog } from "@/components/appointments/StatusUpdateDialog"
@@ -14,10 +14,11 @@ interface AppointmentListViewProps {
     appointments: Appointment[]
     variant?: "admin" | "doctor"
     onSelect?: (a: Appointment) => void
+    onViewRecord?: (a: Appointment) => void
     emptyText?: string
 }
 
-export function AppointmentListView({ appointments, variant = "admin", onSelect, emptyText }: AppointmentListViewProps) {
+export function AppointmentListView({ appointments, variant = "admin", onSelect, onViewRecord, emptyText }: AppointmentListViewProps) {
     const t = useTranslations("Appointments")
     const commonT = useTranslations("Common")
 
@@ -32,8 +33,12 @@ export function AppointmentListView({ appointments, variant = "admin", onSelect,
                     <div
                         key={a.id}
                         onClick={() => ACTIONABLE.includes(a.status) && onSelect?.(a)}
-                        className={`flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card transition-all ${ACTIONABLE.includes(a.status) ? "cursor-pointer hover:border-primary/30 hover:bg-accent/30" : "opacity-70"
-                            }`}
+                        onDoubleClick={() => a.status === "completed" && onViewRecord?.(a)}
+                        className={`flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card transition-all ${
+                            ACTIONABLE.includes(a.status) ? "cursor-pointer hover:border-primary/30 hover:bg-accent/30"
+                            : a.status === "completed" ? "cursor-pointer hover:border-emerald-500/30 hover:bg-emerald-500/5"
+                            : "opacity-70"
+                        }`}
                     >
                         <div className="text-center w-14 shrink-0">
                             <p className="text-sm font-black tabular-nums text-foreground">
@@ -68,6 +73,17 @@ export function AppointmentListView({ appointments, variant = "admin", onSelect,
                                     : <Button size="sm" variant="outline" className="rounded-xl font-bold text-xs shrink-0">
                                         Mark Arrived
                                     </Button>
+                        )}
+                        {a.status === "completed" && onViewRecord && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => { e.stopPropagation(); onViewRecord(a) }}
+                                className="rounded-xl font-bold text-xs shrink-0 gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                            >
+                                <ClipboardList className="w-3.5 h-3.5" />
+                                {t("record")}
+                            </Button>
                         )}
                     </div>
                 ))}
@@ -121,6 +137,17 @@ export function AppointmentListView({ appointments, variant = "admin", onSelect,
                         <Badge variant="outline" className={priorityColors[a.priority] || "bg-secondary"}>
                             {t(`priorities.${a.priority}`)}
                         </Badge>
+                        {a.status === "completed" && onViewRecord && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onViewRecord(a)}
+                                className="rounded-xl font-bold text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                            >
+                                <ClipboardList className="w-3.5 h-3.5" />
+                                {t("record")}
+                            </Button>
+                        )}
                     </div>
                 </div>
             ))}

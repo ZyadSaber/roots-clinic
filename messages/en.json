@@ -391,6 +391,37 @@
       "passwordsMustMatch": "Passwords must match"
     }
   },
+  "Radiology": {
+    "title": "Radiology",
+    "desc": "Manage patient imaging records and X-ray assets",
+    "searchPlaceholder": "Search by patient name, ID or image type…",
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
+    "stats": {
+      "total": "Total Images",
+      "panoramic": "Panoramic",
+      "bitewing": "Bitewing",
+      "periapical": "Periapical"
+    },
+    "table": {
+      "patient": "Patient",
+      "imageType": "Image Type",
+      "uploadedBy": "Uploaded By",
+      "takenAt": "Taken At",
+      "notes": "Notes",
+      "actions": "Actions"
+    },
+    "imageTypes": {
+      "panoramic": "Panoramic",
+      "bitewing": "Bitewing",
+      "periapical": "Periapical"
+    },
+    "preview": "Image Preview",
+    "selectToPreview": "Select an image to preview",
+    "noRecords": "No radiology records found for the selected period.",
+    "view": "View",
+    "download": "Download"
+  },
   "Appointments": {
     "addAppointment": "New Appointment",
     "stats": {
@@ -451,6 +482,43 @@
     "priorities": {
       "normal": "Normal",
       "urgent": "Urgent"
+    },
+    "record": "Record",
+    "visitModal": {
+      "titleInProgress": "Visit in Progress",
+      "titleCompleted": "Completed Visit",
+      "descInProgress": "Session locked · complete or send for radiology to continue",
+      "descCompleted": "Read-only · visit record",
+      "completedBadge": "Visit Completed",
+      "urgent": "URGENT",
+      "clinicalNotes": "Clinical Notes",
+      "loading": "Loading visit record…",
+      "diagnosis": "Diagnosis",
+      "diagnosisPlaceholder": "Enter diagnosis…",
+      "procedureDone": "Procedure Done",
+      "procedureDonePlaceholder": "e.g. Composite #14",
+      "followUpDate": "Follow-up Date",
+      "procedureNotes": "Procedure Notes",
+      "procedureNotesPlaceholder": "Clinical observations, complications, anesthesia used…",
+      "prescription": "Prescription",
+      "prescriptionPlaceholder": "Medications, dosage, duration…",
+      "saveNotes": "Save Notes",
+      "radiology": "Radiology",
+      "noImages": "No images yet",
+      "noImagesDesc": "Images uploaded by radiology staff will appear here automatically",
+      "sendForRadiology": "Send for Radiology",
+      "endVisit": "End Visit & Save",
+      "close": "Close",
+      "toastSaved": "Notes saved",
+      "toastSaveFailed": "Failed to save",
+      "toastCompleted": "Visit completed — {name}",
+      "toastEndFailed": "Failed to end visit",
+      "toastError": "Something went wrong",
+      "print": "Print",
+      "exportPdf": "Export PDF",
+      "exportExcel": "Export Excel",
+      "field": "Field",
+      "value": "Value"
     }
   }
 }

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useTranslations } from "next-intl"
 import { format } from "date-fns"
 import {
     Stethoscope, User, Clock, ScanLine, CheckCircle,
     Save, ImageIcon, FileText, Pill, CalendarCheck, ClipboardList, X,
+    Printer, Download, Sheet,
 } from "lucide-react"
 import { updateAppointmentStatus } from "@/services/appointments"
 import { getVisitByAppointmentId, getRadiologyByVisitId, updateVisitRecord } from "@/services/visits"
@@ -14,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Textarea from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 import { useFormManager, useVisibility } from "@/hooks"
 import { Appointment } from "@/types/appointments"
 import { toast } from "sonner"
@@ -32,6 +34,8 @@ interface VisitInProgressModalProps {
     open: boolean
     onSendForRadiology: () => void
     onEndVisit: () => void
+    onClose?: () => void
+    readOnly?: boolean
 }
 
 export function VisitInProgressModal({
@@ -39,7 +43,10 @@ export function VisitInProgressModal({
     open,
     onSendForRadiology,
     onEndVisit,
+    onClose,
+    readOnly = false,
 }: VisitInProgressModalProps) {
+    const t = useTranslations("Appointments.visitModal")
     const queryClient = useQueryClient()
 
     // ── Form state ──
@@ -88,10 +95,10 @@ export function VisitInProgressModal({
             follow_up_date: formData.follow_up_date || null,
         }),
         onSuccess: (res) => {
-            if (res.success) toast.success("Notes saved")
-            else toast.error(res.error ?? "Failed to save")
+            if (res.success) toast.success(t("toastSaved"))
+            else toast.error(res.error ?? t("toastSaveFailed"))
         },
-        onError: () => toast.error("Something went wrong"),
+        onError: () => toast.error(t("toastError")),
     })
 
     const endMutation = useMutation({
@@ -109,13 +116,13 @@ export function VisitInProgressModal({
                 queryClient.invalidateQueries({ queryKey: ["appointments"] })
                 queryClient.invalidateQueries({ queryKey: ["appointments-stats"] })
                 queryClient.invalidateQueries({ queryKey: ["visit", appointment.id] })
-                toast.success(`Visit completed — ${appointment.patient_name}`)
+                toast.success(t("toastCompleted", { name: appointment.patient_name }))
                 onEndVisit()
             } else {
-                toast.error(res.error ?? "Failed to end visit")
+                toast.error(res.error ?? t("toastEndFailed"))
             }
         },
-        onError: () => toast.error("Something went wrong"),
+        onError: () => toast.error(t("toastError")),
     })
 
     const isPending = saveMutation.isPending || endMutation.isPending
@@ -125,32 +132,102 @@ export function VisitInProgressModal({
         openLightbox()
     }
 
+    const buildVisitRows = () => [
+        [t("diagnosis"), formData.diagnosis || "—"],
+        [t("procedureDone"), formData.procedure_done || "—"],
+        [t("procedureNotes"), formData.procedure_notes || "—"],
+        [t("prescription"), formData.prescription || "—"],
+        [t("followUpDate"), formData.follow_up_date || "—"],
+    ]
+
+    const handlePrint = () => {
+        const rows = buildVisitRows()
+        const win = window.open("", "_blank", "width=800,height=600")
+        if (!win) return
+        win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>Visit – ${appointment.patient_name}</title>
+<style>
+  body{font-family:sans-serif;padding:32px;color:#111}
+  h2{margin-bottom:4px}p.sub{color:#666;font-size:13px;margin-top:0}
+  table{width:100%;border-collapse:collapse;margin-top:24px}
+  th,td{text-align:left;padding:10px 14px;border:1px solid #e5e7eb;font-size:14px}
+  th{background:#f9fafb;font-weight:700;width:200px}
+  @media print{button{display:none}}
+</style></head><body>
+<h2>${appointment.patient_name} <span style="font-weight:400;font-size:15px">(${appointment.patient_code})</span></h2>
+<p class="sub">${appointment.procedure_type} · ${format(new Date(appointment.appointment_date), "PPP · hh:mm a")}</p>
+<table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${(v as string).replace(/\n/g, "<br/>")}</td></tr>`).join("")}</table>
+</body></html>`)
+        win.document.close()
+        win.focus()
+        win.print()
+    }
+
+    const handleExportPDF = async () => {
+        const { default: jsPDF } = await import("jspdf")
+        const { default: autoTable } = await import("jspdf-autotable")
+        const doc = new jsPDF()
+        doc.setFontSize(16)
+        doc.text(`${appointment.patient_name} (${appointment.patient_code})`, 14, 18)
+        doc.setFontSize(10)
+        doc.setTextColor(120)
+        doc.text(`${appointment.procedure_type} · ${format(new Date(appointment.appointment_date), "PPP · hh:mm a")}`, 14, 26)
+        autoTable(doc, {
+            startY: 34,
+            head: [[t("field"), t("value")]],
+            body: buildVisitRows(),
+            styles: { fontSize: 11 },
+            headStyles: { fillColor: [79, 70, 229] },
+        })
+        doc.save(`visit-${appointment.patient_code}-${appointment.id.slice(0, 8)}.pdf`)
+    }
+
+    const handleExportExcel = () => {
+        const rows = buildVisitRows()
+        const header = `${t("field")}\t${t("value")}\n`
+        const body = rows.map(([k, v]) => `${k}\t${v}`).join("\n")
+        const blob = new Blob(["\uFEFF" + header + body], { type: "text/tab-separated-values;charset=utf-8" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `visit-${appointment.patient_code}-${appointment.id.slice(0, 8)}.xls`
+        a.click()
+        URL.revokeObjectURL(url)
+    }
+
     return (
         <>
-            <Dialog open={open} onOpenChange={() => { }}>
+            <Dialog open={open} onOpenChange={readOnly ? onClose : () => { }}>
                 <DialogContent
-                    onInteractOutside={(e) => e.preventDefault()}
-                    onEscapeKeyDown={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => { if (!readOnly) e.preventDefault() }}
+                    onEscapeKeyDown={(e) => { if (!readOnly) e.preventDefault() }}
                     className="min-w-[80vw] w-[80vw] max-w-7xl p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl bg-background [&>button]:hidden max-h-[95vh] flex flex-col"
                 >
                     {/* ── Top bar ── */}
                     <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-border/40 shrink-0">
                         <div className="flex items-center gap-3 min-w-0">
                             <div className="relative shrink-0">
-                                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-                                    <Stethoscope className="w-5 h-5 text-amber-500" />
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${readOnly ? "bg-emerald-500/10 border border-emerald-500/20" : "bg-amber-500/10 border border-amber-500/20"}`}>
+                                    <Stethoscope className={`w-5 h-5 ${readOnly ? "text-emerald-500" : "text-amber-500"}`} />
                                 </div>
-                                <span className="absolute -top-0.5 -inset-e-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                                {!readOnly && <span className="absolute -top-0.5 -inset-e-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />}
                             </div>
                             <div className="min-w-0">
                                 <DialogTitle className="text-base font-black tracking-tight leading-tight">
-                                    Visit in Progress
+                                    {readOnly ? t("titleCompleted") : t("titleInProgress")}
                                 </DialogTitle>
                                 <DialogDescription className="text-xs text-muted-foreground font-medium">
-                                    Session locked · complete or send for radiology to continue
+                                    {readOnly ? t("descCompleted") : t("descInProgress")}
                                 </DialogDescription>
                             </div>
                         </div>
+
+                        {readOnly && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 shrink-0">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                <span className="text-xs font-black text-emerald-600 uppercase tracking-wide">{t("completedBadge")}</span>
+                            </div>
+                        )}
 
                         {/* Patient summary */}
                         <div className="hidden sm:flex items-center gap-3 rounded-xl bg-accent/30 border border-border/30 px-3 py-2 shrink-0">
@@ -168,13 +245,17 @@ export function VisitInProgressModal({
                                     {format(new Date(appointment.appointment_date), "hh:mm a")}
                                 </span>
                                 <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {format(new Date(appointment.arrived_at), "hh:mm a")}
+                                </span>
+                                <span className="flex items-center gap-1">
                                     <Stethoscope className="w-3 h-3" />
                                     {appointment.procedure_type}
                                 </span>
                             </div>
                             {appointment.priority === "urgent" && (
                                 <Badge className="bg-destructive/10 text-destructive border-0 text-[10px] font-black">
-                                    URGENT
+                                    {t("urgent")}
                                 </Badge>
                             )}
                         </div>
@@ -188,108 +269,94 @@ export function VisitInProgressModal({
                         <div className="flex-1 flex flex-col overflow-hidden border-e border-border/40 min-w-0">
                             <div className="flex items-center gap-2 px-5 py-3 border-b border-border/30 bg-secondary/20 shrink-0">
                                 <ClipboardList className="w-4 h-4 text-primary" />
-                                <span className="text-sm font-black">Clinical Notes</span>
+                                <span className="text-sm font-black">{t("clinicalNotes")}</span>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 scrollbar-hide">
-                                {visitLoading ? (
-                                    <div className="text-center py-10 text-sm text-muted-foreground animate-pulse">
-                                        Loading visit record…
-                                    </div>
-                                ) : (
+                            <LoadingOverlay loading={visitLoading}>
+                                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 scrollbar-hide">
                                     <>
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-black text-muted-foreground flex items-center gap-1.5">
-                                                <FileText className="w-3.5 h-3.5" /> Diagnosis
-                                            </Label>
-                                            <Textarea
-                                                name="diagnosis"
-                                                placeholder="Enter diagnosis…"
-                                                rows={2}
-                                                className="rounded-xl resize-none text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
-                                                value={formData.diagnosis}
-                                                onChange={handleChange}
-                                            />
-                                        </div>
+                                        <Textarea
+                                            icon={FileText}
+                                            label={t("diagnosis")}
+                                            name="diagnosis"
+                                            placeholder={t("diagnosisPlaceholder")}
+                                            rows={2}
+                                            className="rounded-xl resize-none text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30 disabled:opacity-70 disabled:cursor-default"
+                                            value={formData.diagnosis}
+                                            onChange={handleChange}
+                                            disabled={readOnly}
+                                        />
 
                                         <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-black text-muted-foreground flex items-center gap-1.5">
-                                                    <Stethoscope className="w-3.5 h-3.5" /> Procedure Done
-                                                </Label>
-                                                <Input
-                                                    name="procedure_done"
-                                                    placeholder="e.g. Composite #14"
-                                                    className="rounded-xl text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
-                                                    value={formData.procedure_done}
-                                                    onChange={handleChange}
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs font-black text-muted-foreground flex items-center gap-1.5">
-                                                    <CalendarCheck className="w-3.5 h-3.5" /> Follow-up Date
-                                                </Label>
-                                                <Input
-                                                    name="follow_up_date"
-                                                    type="date"
-                                                    className="rounded-xl text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
-                                                    value={formData.follow_up_date}
-                                                    onChange={handleChange}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-black text-muted-foreground flex items-center gap-1.5">
-                                                <FileText className="w-3.5 h-3.5" /> Procedure Notes
-                                            </Label>
-                                            <Textarea
-                                                name="procedure_notes"
-                                                placeholder="Clinical observations, complications, anesthesia used…"
-                                                rows={3}
-                                                className="rounded-xl resize-none text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
-                                                value={formData.procedure_notes}
+                                            <Input
+                                                name="procedure_done"
+                                                placeholder={t("procedureDonePlaceholder")}
+                                                className="rounded-xl text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
+                                                value={formData.procedure_done}
                                                 onChange={handleChange}
+                                                disabled={readOnly}
+                                                icon={Stethoscope}
+                                                label={t("procedureDone")}
+                                            />
+                                            <Input
+                                                icon={CalendarCheck}
+                                                label={t("followUpDate")}
+                                                name="follow_up_date"
+                                                type="date"
+                                                className="rounded-xl text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
+                                                value={formData.follow_up_date}
+                                                onChange={handleChange}
+                                                disabled={readOnly}
                                             />
                                         </div>
+                                        <Textarea
+                                            icon={FileText}
+                                            label={t("procedureNotes")}
+                                            name="procedure_notes"
+                                            placeholder={t("procedureNotesPlaceholder")}
+                                            rows={3}
+                                            className="rounded-xl resize-none text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30 disabled:opacity-70 disabled:cursor-default"
+                                            value={formData.procedure_notes}
+                                            onChange={handleChange}
+                                            disabled={readOnly}
+                                        />
+                                        <Textarea
+                                            icon={Pill}
+                                            label={t("prescription")}
+                                            name="prescription"
+                                            placeholder={t("prescriptionPlaceholder")}
+                                            rows={2}
+                                            className="rounded-xl resize-none text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30 disabled:opacity-70 disabled:cursor-default"
+                                            value={formData.prescription}
+                                            onChange={handleChange}
+                                            disabled={readOnly}
+                                        />
 
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs font-black text-muted-foreground flex items-center gap-1.5">
-                                                <Pill className="w-3.5 h-3.5" /> Prescription
-                                            </Label>
-                                            <Textarea
-                                                name="prescription"
-                                                placeholder="Medications, dosage, duration…"
-                                                rows={2}
-                                                className="rounded-xl resize-none text-sm bg-background border-border/50 focus-visible:ring-1 focus-visible:ring-primary/30"
-                                                value={formData.prescription}
-                                                onChange={handleChange}
-                                            />
-                                        </div>
-
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => saveMutation.mutate()}
-                                            disabled={isPending || !visit}
-                                            className="w-full h-9 rounded-xl font-bold gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                                        >
-                                            {saveMutation.isPending
-                                                ? <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                                                : <Save className="w-3.5 h-3.5" />
-                                            }
-                                            Save Notes
-                                        </Button>
+                                        {!readOnly && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => saveMutation.mutate()}
+                                                disabled={isPending || !visit}
+                                                className="w-full h-9 rounded-xl font-bold gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                                            >
+                                                {saveMutation.isPending
+                                                    ? <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                                    : <Save className="w-3.5 h-3.5" />
+                                                }
+                                                {t("saveNotes")}
+                                            </Button>
+                                        )}
                                     </>
-                                )}
-                            </div>
+                                </div>
+                            </LoadingOverlay>
                         </div>
 
                         {/* ── Radiology Panel (end side) ── */}
                         <div className="w-96 shrink-0 flex flex-col overflow-hidden">
                             <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-indigo-500/5 shrink-0">
                                 <ImageIcon className="w-4 h-4 text-indigo-500" />
-                                <span className="text-sm font-black text-indigo-600">Radiology</span>
+                                <span className="text-sm font-black text-indigo-600">{t("radiology")}</span>
                                 {radiology.length > 0 && (
                                     <Badge className="ms-auto bg-indigo-500/15 text-indigo-600 border-0 text-[10px] font-black">
                                         {radiology.length}
@@ -304,9 +371,9 @@ export function VisitInProgressModal({
                                             <ImageIcon className="w-6 h-6 text-indigo-400" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-xs font-black text-muted-foreground">No images yet</p>
+                                            <p className="text-xs font-black text-muted-foreground">{t("noImages")}</p>
                                             <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-                                                Images uploaded by radiology staff will appear here automatically
+                                                {t("noImagesDesc")}
                                             </p>
                                         </div>
                                     </div>
@@ -349,29 +416,67 @@ export function VisitInProgressModal({
 
                     {/* ── Action bar ── */}
                     <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-t border-border/40 bg-secondary/10">
-                        <Button
-                            variant="outline"
-                            onClick={onSendForRadiology}
-                            disabled={isPending}
-                            className="flex-1 h-11 rounded-2xl font-black gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50"
-                        >
-                            <ScanLine className="w-4 h-4" />
-                            Send for Radiology
-                        </Button>
-                        <Button
-                            onClick={() => endMutation.mutate()}
-                            disabled={isPending}
-                            className="flex-1 h-11 rounded-2xl font-black gap-2 shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
-                        >
-                            {endMutation.isPending ? (
-                                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                            ) : (
-                                <>
-                                    <CheckCircle className="w-4 h-4" />
-                                    End Visit & Save
-                                </>
-                            )}
-                        </Button>
+                        {readOnly ? (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    onClick={handlePrint}
+                                    className="h-11 rounded-2xl font-black gap-2 px-5 border-border/50 text-foreground hover:bg-accent/50"
+                                >
+                                    <Printer className="w-4 h-4" />
+                                    {t("print")}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleExportPDF}
+                                    className="h-11 rounded-2xl font-black gap-2 px-5 border-rose-500/30 text-rose-600 hover:bg-rose-500/10"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    {t("exportPdf")}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleExportExcel}
+                                    className="h-11 rounded-2xl font-black gap-2 px-5 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10"
+                                >
+                                    <Sheet className="w-4 h-4" />
+                                    {t("exportExcel")}
+                                </Button>
+                                <Button
+                                    onClick={onClose}
+                                    className="flex-1 h-11 rounded-2xl font-black gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                                >
+                                    <X className="w-4 h-4" />
+                                    {t("close")}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    onClick={onSendForRadiology}
+                                    disabled={isPending}
+                                    className="flex-1 h-11 rounded-2xl font-black gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50"
+                                >
+                                    <ScanLine className="w-4 h-4" />
+                                    {t("sendForRadiology")}
+                                </Button>
+                                <Button
+                                    onClick={() => endMutation.mutate()}
+                                    disabled={isPending}
+                                    className="flex-1 h-11 rounded-2xl font-black gap-2 shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+                                >
+                                    {endMutation.isPending ? (
+                                        <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <>
+                                            <CheckCircle className="w-4 h-4" />
+                                            {t("endVisit")}
+                                        </>
+                                    )}
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>

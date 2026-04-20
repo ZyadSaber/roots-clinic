@@ -31,6 +31,7 @@ interface AppointmentTabsProps {
     showCalendar?: boolean
     variant?: "admin" | "doctor"
     onSelect?: (a: Appointment) => void
+    onViewRecord?: (a: Appointment) => void
 }
 
 export function AppointmentTabs({
@@ -44,6 +45,7 @@ export function AppointmentTabs({
     showCalendar = true,
     variant,
     onSelect,
+    onViewRecord,
 }: AppointmentTabsProps) {
     const t = useTranslations("Appointments")
     const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -129,7 +131,7 @@ export function AppointmentTabs({
                         )}
                     </CardHeader>
                     <CardContent id="appointments-list-container">
-                        <AppointmentListView appointments={appointments} variant={variant} onSelect={onSelect} />
+                        <AppointmentListView appointments={appointments} variant={variant} onSelect={onSelect} onViewRecord={onViewRecord} />
                     </CardContent>
                 </Card>
             </TabsContent>

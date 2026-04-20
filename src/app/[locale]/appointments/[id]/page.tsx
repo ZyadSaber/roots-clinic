@@ -46,6 +46,7 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
     const [pendingRadiology, setPendingRadiology] = useState<Set<string>>(new Set())
     const [modalOpen, setModalOpen] = useState(false)
     const [activeAppointment, setActiveAppointment] = useState<Appointment | null>(null)
+    const [viewingCompleted, setViewingCompleted] = useState(false)
 
     // Load persisted pending-radiology set from localStorage once on mount
     useEffect(() => {
@@ -100,7 +101,7 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
         setActiveAppointment(null)
     }
 
-    // "Resume Visit" — clicked from the appointment list row
+    // "Resume Visit" — clicked from the appointment list row (in_chair only)
     const handleResumeVisit = (apt: Appointment) => {
         if (apt.status !== "in_chair") return
         const next = new Set(pendingRadiology)
@@ -108,7 +109,20 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
         setPendingRadiology(next)
         savePendingRadiology(next)
         setActiveAppointment(apt)
+        setViewingCompleted(false)
         setModalOpen(true)
+    }
+
+    const handleViewCompleted = (apt: Appointment) => {
+        setActiveAppointment(apt)
+        setViewingCompleted(true)
+        setModalOpen(true)
+    }
+
+    const handleCloseCompleted = () => {
+        setModalOpen(false)
+        setActiveAppointment(null)
+        setViewingCompleted(false)
     }
 
     const appointments = useMemo(
@@ -144,6 +158,8 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
                     open={modalOpen}
                     onSendForRadiology={handleSendForRadiology}
                     onEndVisit={handleEndVisit}
+                    onClose={handleCloseCompleted}
+                    readOnly={viewingCompleted}
                 />
             )}
 
@@ -223,6 +239,7 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
                         showExport={false}
                         variant="doctor"
                         onSelect={handleResumeVisit}
+                        onViewRecord={handleViewCompleted}
                     />
                 </div>
             </div>

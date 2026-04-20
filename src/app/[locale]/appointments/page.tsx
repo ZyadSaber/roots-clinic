@@ -12,6 +12,7 @@ import ErrorLayout from "@/components/ErrorLayout"
 import { Card, CardContent } from "@/components/ui/card"
 import { AppointmentDialog } from "@/components/appointments/AppointmentDialog"
 import { AppointmentTabs } from "@/components/appointments/AppointmentTabs"
+import { VisitInProgressModal } from "@/components/appointments/VisitInProgressModal"
 import { Appointment, AppointmentStats } from "@/types/appointments"
 import { DoctorAppointments } from "@/types/doctors"
 import { timeToDecimal } from "@/lib/timeToDecimal"
@@ -22,6 +23,7 @@ export default function AppointmentsPage() {
     const errorT = useTranslations("Errors.applicationError.505")
     const tTitle = useTranslations("Routes")
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const [recordAppointment, setRecordAppointment] = useState<Appointment | null>(null)
 
     const {
         data: appointments = [],
@@ -133,7 +135,19 @@ export default function AppointmentsPage() {
                         hoursRange={hoursRange}
                         startHour={startHour}
                         displayDateStr={displayDateStr}
+                        onViewRecord={setRecordAppointment}
                     />
+
+                    {recordAppointment && (
+                        <VisitInProgressModal
+                            appointment={recordAppointment}
+                            open={!!recordAppointment}
+                            readOnly
+                            onSendForRadiology={() => {}}
+                            onEndVisit={() => {}}
+                            onClose={() => setRecordAppointment(null)}
+                        />
+                    )}
                 </div>
             </div>
         </LoadingOverlay>
