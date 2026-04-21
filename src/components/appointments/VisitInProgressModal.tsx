@@ -32,7 +32,7 @@ const FORM_DEFAULTS = {
 interface VisitInProgressModalProps {
     appointment: Appointment
     open: boolean
-    onSendForRadiology: () => void
+    onSendForRadiology: (visitId: string) => Promise<void>
     onEndVisit: () => void
     onClose?: () => void
     readOnly?: boolean
@@ -51,6 +51,8 @@ export function VisitInProgressModal({
 
     // ── Form state ──
     const { formData, handleChange, setFormData } = useFormManager({ initialData: FORM_DEFAULTS })
+
+    const [sendingRadiology, setSendingRadiology] = useState(false)
 
     // ── Lightbox state ──
     const { visible: lightboxOpen, handleOpen: openLightbox, handleClose: closeLightbox } = useVisibility()
@@ -454,12 +456,20 @@ export function VisitInProgressModal({
                             <>
                                 <Button
                                     variant="outline"
-                                    onClick={onSendForRadiology}
-                                    disabled={isPending}
+                                    onClick={async () => {
+                                        if (!visit?.id) return
+                                        setSendingRadiology(true)
+                                        try { await onSendForRadiology(visit.id) }
+                                        finally { setSendingRadiology(false) }
+                                    }}
+                                    disabled={isPending || sendingRadiology || !visit?.id}
                                     className="flex-1 h-11 rounded-2xl font-black gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50"
                                 >
-                                    <ScanLine className="w-4 h-4" />
-                                    {t("sendForRadiology")}
+                                    {sendingRadiology
+                                        ? <span className="w-4 h-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                                        : <ScanLine className="w-4 h-4" />
+                                    }
+                                    {sendingRadiology ? t("sendingForRadiology") : t("sendForRadiology")}
                                 </Button>
                                 <Button
                                     onClick={() => endMutation.mutate()}

@@ -134,7 +134,11 @@ export async function getAppointmentsByDoctor(
       a.procedure_type,
       a.status,
       a.notes,
-      a.priority
+      a.priority,
+      EXISTS (
+        SELECT 1 FROM radiology_requests rr
+        WHERE rr.appointment_id = a.id AND rr.status = 'pending'
+      ) AS awaiting_radiology
     FROM appointments a
     JOIN patients p ON p.id = a.patient_id
     JOIN doctors d ON d.id = a.doctor_id

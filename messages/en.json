@@ -420,7 +420,23 @@
     "selectToPreview": "Select an image to preview",
     "noRecords": "No radiology records found for the selected period.",
     "view": "View",
-    "download": "Download"
+    "download": "Download",
+    "pendingRequests": "Pending Requests",
+    "noPendingRequests": "No pending imaging requests",
+    "uploadXray": "Upload X-Ray",
+    "requestedAt": "Requested at",
+    "uploadDialog": {
+      "title": "Upload Radiology Image",
+      "desc": "Upload the X-ray and mark the request as completed.",
+      "imageType": "Image Type",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional observations…",
+      "dropzone": "Click to select or drag and drop an image",
+      "upload": "Upload & Complete",
+      "uploading": "Uploading…",
+      "uploadSuccess": "X-ray uploaded — {name}",
+      "uploadError": "Upload failed"
+    }
   },
   "Appointments": {
     "addAppointment": "New Appointment",
@@ -514,6 +530,9 @@
       "toastCompleted": "Visit completed — {name}",
       "toastEndFailed": "Failed to end visit",
       "toastError": "Something went wrong",
+      "sendingForRadiology": "Sending…",
+      "toastSentForRadiology": "Sent for radiology — {name}",
+      "toastSendFailed": "Failed to send for radiology",
       "print": "Print",
       "exportPdf": "Export PDF",
       "exportExcel": "Export Excel",

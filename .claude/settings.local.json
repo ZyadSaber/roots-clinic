@@ -7,7 +7,9 @@
       "Bash(npx tsc *)",
       "Bash(git -C /home/zyad/roots-clinic status)",
       "Bash(git -C /home/zyad/roots-clinic diff --stat HEAD)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(xargs grep *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)"
     ]
   }
 }

@@ -28,6 +28,7 @@ export interface Appointment {
   procedure_type: string;
   priority: "normal" | "urgent";
   duration_mins: string;
+  awaiting_radiology: boolean;
 }
 
 export interface AppointmentPayload {
@@ -37,6 +38,23 @@ export interface AppointmentPayload {
   duration_mins: number;
   procedure_type: string;
   notes?: string;
+}
+
+export type RadiologyRequestStatus = "pending" | "completed";
+
+export interface RadiologyRequest {
+  id: string;
+  appointment_id: string;
+  visit_id: string | null;
+  patient_id: string;
+  patient_name: string;
+  patient_code: string;
+  doctor_name: string | null;
+  procedure_type: string | null;
+  appointment_date: string;
+  status: RadiologyRequestStatus;
+  requested_at: string;
+  completed_at: string | null;
 }
 
 export interface AppointmentFilters {

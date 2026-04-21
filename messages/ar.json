@@ -407,6 +407,53 @@
       "passwordsMustMatch": "كلمات المرور يجب أن تتطابق"
     }
   },
+  "Radiology": {
+    "title": "الأشعة",
+    "desc": "إدارة صور الأشعة وسجلات التصوير الطبي",
+    "searchPlaceholder": "بحث باسم المريض أو الكود أو نوع الصورة…",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "stats": {
+      "total": "إجمالي الصور",
+      "panoramic": "بانورامي",
+      "bitewing": "بايت وينج",
+      "periapical": "بيريابيكال"
+    },
+    "table": {
+      "patient": "المريض",
+      "imageType": "نوع الصورة",
+      "uploadedBy": "رُفع بواسطة",
+      "takenAt": "وقت الالتقاط",
+      "notes": "ملاحظات",
+      "actions": "الإجراءات"
+    },
+    "imageTypes": {
+      "panoramic": "بانورامي",
+      "bitewing": "بايت وينج",
+      "periapical": "بيريابيكال"
+    },
+    "preview": "معاينة الصورة",
+    "selectToPreview": "اختر صورة للمعاينة",
+    "noRecords": "لا توجد سجلات أشعة للفترة المحددة.",
+    "view": "عرض",
+    "download": "تحميل",
+    "pendingRequests": "الطلبات المعلقة",
+    "noPendingRequests": "لا توجد طلبات تصوير معلقة",
+    "uploadXray": "رفع أشعة",
+    "requestedAt": "وقت الطلب",
+    "uploadDialog": {
+      "title": "رفع صورة أشعة",
+      "desc": "ارفع صورة الأشعة وأكمل الطلب.",
+      "imageType": "نوع الصورة",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "ملاحظات أو نتائج اختيارية…",
+      "dropzone": "اضغط لاختيار صورة أو اسحبها وأفلتها",
+      "upload": "رفع وإتمام",
+      "uploading": "جارٍ الرفع…",
+      "uploadSuccess": "تم رفع الأشعة — {name}",
+      "uploadError": "فشل الرفع"
+    }
+  },
   "Appointments": {
     "pageTitle": "جدول المواعيد",
     "pageDescription": "إدارة وتتبع جميع المواعيد",
@@ -501,6 +548,9 @@
       "toastCompleted": "اكتملت الزيارة — {name}",
       "toastEndFailed": "فشل إنهاء الزيارة",
       "toastError": "حدث خطأ ما",
+      "sendingForRadiology": "جارٍ الإرسال…",
+      "toastSentForRadiology": "تم الإرسال للأشعة — {name}",
+      "toastSendFailed": "فشل الإرسال للأشعة",
       "print": "طباعة",
       "exportPdf": "تصدير PDF",
       "exportExcel": "تصدير Excel",

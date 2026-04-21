@@ -2,12 +2,13 @@
 
 import { useMemo, useState, useEffect } from "react"
 import { use } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { useLocale } from "next-intl"
 import { AlertTriangle, Calendar, ChevronLeft, CheckCircle2, Clock3, UserCheck, Armchair } from "lucide-react"
 import { getAppointmentsByDoctor, getDoctorAppointmentStats } from "@/services/appointments"
+import { createRadiologyRequest } from "@/services/radiology"
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 import { DatePicker } from "@/components/ui/Date"
 import ErrorLayout from "@/components/ErrorLayout"
@@ -16,23 +17,9 @@ import { AppointmentStatCard } from "@/components/appointments/AppointmentStatCa
 import { AppointmentTabs } from "@/components/appointments/AppointmentTabs"
 import { VisitInProgressModal } from "@/components/appointments/VisitInProgressModal"
 import { Appointment, AppointmentStatus } from "@/types/appointments"
+import { toast } from "sonner"
 
 const SHOWN_STATUSES: AppointmentStatus[] = ["confirmed", "arrived", "in_chair", "completed"]
-
-const PENDING_RADIOLOGY_KEY = "pendingRadiology"
-
-function loadPendingRadiology(): Set<string> {
-    if (typeof window === "undefined") return new Set()
-    try {
-        return new Set(JSON.parse(localStorage.getItem(PENDING_RADIOLOGY_KEY) || "[]"))
-    } catch {
-        return new Set()
-    }
-}
-
-function savePendingRadiology(ids: Set<string>) {
-    localStorage.setItem(PENDING_RADIOLOGY_KEY, JSON.stringify([...ids]))
-}
 
 export default function DoctorAppointmentsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
@@ -42,16 +29,11 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
     const router = useRouter()
     const locale = useLocale()
 
+    const queryClient = useQueryClient()
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-    const [pendingRadiology, setPendingRadiology] = useState<Set<string>>(new Set())
     const [modalOpen, setModalOpen] = useState(false)
     const [activeAppointment, setActiveAppointment] = useState<Appointment | null>(null)
     const [viewingCompleted, setViewingCompleted] = useState(false)
-
-    // Load persisted pending-radiology set from localStorage once on mount
-    useEffect(() => {
-        setPendingRadiology(loadPendingRadiology())
-    }, [])
 
     const {
         data: allAppointments = [],
@@ -70,33 +52,35 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
         refetchInterval: 30000,
     })
 
-    // Auto-open modal for any in_chair appointment not pending radiology
+    // Auto-open modal for any in_chair appointment not awaiting radiology
     useEffect(() => {
         const inChair = allAppointments.find((a) => a.status === "in_chair")
-        if (inChair && !pendingRadiology.has(inChair.id)) {
+        if (inChair && !inChair.awaiting_radiology) {
             setActiveAppointment(inChair)
             setModalOpen(true)
         } else if (!inChair) {
             setModalOpen(false)
             setActiveAppointment(null)
         }
-    }, [allAppointments, pendingRadiology])
+    }, [allAppointments])
 
-    const handleSendForRadiology = () => {
+    const handleSendForRadiology = async (visitId: string) => {
         if (!activeAppointment) return
-        const next = new Set(pendingRadiology)
-        next.add(activeAppointment.id)
-        setPendingRadiology(next)
-        savePendingRadiology(next)
-        setModalOpen(false)
+        const result = await createRadiologyRequest(
+            activeAppointment.id,
+            visitId,
+            activeAppointment.patient_id,
+            activeAppointment.doctor_id,
+        )
+        if (result.success) {
+            queryClient.invalidateQueries({ queryKey: ["appointments", id, selectedDate] })
+            setModalOpen(false)
+        } else {
+            toast.error(result.error ?? t("visitModal.toastError"))
+        }
     }
 
     const handleEndVisit = () => {
-        if (!activeAppointment) return
-        const next = new Set(pendingRadiology)
-        next.delete(activeAppointment.id)
-        setPendingRadiology(next)
-        savePendingRadiology(next)
         setModalOpen(false)
         setActiveAppointment(null)
     }
@@ -104,10 +88,6 @@ export default function DoctorAppointmentsPage({ params }: { params: Promise<{ i
     // "Resume Visit" — clicked from the appointment list row (in_chair only)
     const handleResumeVisit = (apt: Appointment) => {
         if (apt.status !== "in_chair") return
-        const next = new Set(pendingRadiology)
-        next.delete(apt.id)
-        setPendingRadiology(next)
-        savePendingRadiology(next)
         setActiveAppointment(apt)
         setViewingCompleted(false)
         setModalOpen(true)

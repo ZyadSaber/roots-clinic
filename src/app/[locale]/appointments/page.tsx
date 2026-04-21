@@ -143,7 +143,7 @@ export default function AppointmentsPage() {
                             appointment={recordAppointment}
                             open={!!recordAppointment}
                             readOnly
-                            onSendForRadiology={() => {}}
+                            onSendForRadiology={async () => {}}
                             onEndVisit={() => {}}
                             onClose={() => setRecordAppointment(null)}
                         />
