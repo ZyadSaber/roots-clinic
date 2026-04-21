@@ -5,8 +5,9 @@ import { useRouter, usePathname } from "@/i18n/routing"
 import { Button } from "@/components/ui/button"
 import { ModeToggle } from "./mode-toggle"
 import { LanguageSwitcher } from "./LanguageSwitcher"
-import { LogOut, Calendar, Search, Bell, HelpCircle, User, Clock, Maximize, Minimize, Lock } from "lucide-react"
-import { useState, useEffect } from "react"
+import { LogOut, Calendar, Search, Bell, HelpCircle, User, Clock, Maximize, Minimize, Lock, RefreshCw } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -84,6 +85,15 @@ export function Header() {
         return tNav(`${lastPart}Title`) || lastPart.charAt(0).toUpperCase() + lastPart.slice(1)
     }
 
+    const queryClient = useQueryClient()
+    const [refreshing, setRefreshing] = useState(false)
+
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true)
+        await queryClient.invalidateQueries()
+        setTimeout(() => setRefreshing(false), 600)
+    }, [queryClient])
+
     const { activeNotifications } = useSelector((state: RootState) => state.uiShared)
     const { lock } = useSessionLock()
 
@@ -131,6 +141,16 @@ export function Header() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors"
+                        onClick={handleRefresh}
+                        title="Refresh page data"
+                        disabled={refreshing}
+                    >
+                        <RefreshCw className={`w-5 h-5 transition-transform duration-500 ${refreshing ? "animate-spin" : ""}`} />
+                    </Button>
                     <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-muted-foreground hover:bg-accent transition-colors relative">
                         <Bell className="w-5 h-5" />
                         {activeNotifications > 0 && (
