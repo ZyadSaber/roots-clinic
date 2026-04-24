@@ -45,7 +45,6 @@ export async function fetchAvailableDoctors(): Promise<DoctorSummary[]> {
       d.bio,
       s.phone,
       s.full_name as name,
-      s.avatar_url,
       sp.english_name as en,
       sp.arabic_name as ar,
       d.consultation_fee,
@@ -145,7 +144,6 @@ export async function createDoctor(data: DoctorFormData) {
     name,
     specialty_id,
     status,
-    avatar_url,
     years_experience,
     phone,
     consultation_fee,
@@ -166,11 +164,11 @@ export async function createDoctor(data: DoctorFormData) {
     const { doctor_id } = await executeTransaction(async (client) => {
       const staffResult = await client.query(
         `
-                INSERT INTO staff (username, full_name, role, phone, avatar_url, is_active)
-                VALUES ($1, $2, 'doctor', $3, $4, TRUE)
+                INSERT INTO staff (username, full_name, role, phone, is_active)
+                VALUES ($1, $2, 'doctor', $3, TRUE)
                 RETURNING id
               `,
-        [username, name, phone || "", avatar_url || ""],
+        [username, name, phone || ""],
       );
       staffId = staffResult.rows[0].id;
 
@@ -223,7 +221,6 @@ export async function updateDoctor(data: DoctorFormData) {
     name,
     specialty_id,
     status,
-    avatar_url,
     years_experience,
     phone,
     consultation_fee,
@@ -245,11 +242,11 @@ export async function updateDoctor(data: DoctorFormData) {
         // 1. Update staff
         await client.query(
           `
-          UPDATE staff 
-          SET full_name = $1, username = $2, phone = $3, avatar_url = $4, updated_at = NOW()
-          WHERE id = $5
+          UPDATE staff
+          SET full_name = $1, username = $2, phone = $3, updated_at = NOW()
+          WHERE id = $4
         `,
-          [name, username, phone || "", avatar_url || "", staffId],
+          [name, username, phone || "", staffId],
         );
 
         // 2. Update doctors

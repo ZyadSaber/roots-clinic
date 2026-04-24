@@ -8,7 +8,6 @@ import {
     Stethoscope,
     DollarSign,
     Briefcase,
-    Camera,
     Save,
     Loader2,
     Activity,
@@ -28,7 +27,6 @@ import {
 import useFormManager from "@/hooks/useFormManager"
 import { useLocale, useTranslations } from "next-intl"
 import { DOCTOR_STATUSES } from "@/constants/status"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Specialty, DoctorScheduleRecord } from "@/types/database"
 import {
     Tabs,
@@ -112,7 +110,6 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
             name: "",
             specialty_id: "",
             status: "Available",
-            avatar_url: "",
             years_experience: 0,
             schedule: computedSchedule,
             phone: "",
@@ -195,31 +192,6 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                 </TabsList>
 
                                 <TabsContent value="profile" className="space-y-8 mt-0 focus-visible:outline-none">
-                                    {/* Avatar / Profile Section */}
-                                    <div className="flex items-center gap-6">
-                                        <div className="relative group">
-                                            <Avatar className="h-24 w-24 rounded-3xl border-4 border-background shadow-xl">
-                                                <AvatarImage src={formData.avatar_url} />
-                                                <AvatarFallback className="bg-accent text-2xl font-black">
-                                                    {formData.name ? formData.name.charAt(0) : <Camera className="w-8 h-8 opacity-20" />}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                                <Camera className="text-white w-6 h-6" />
-                                            </div>
-                                        </div>
-                                        <Input
-                                            name="avatar_url"
-                                            value={formData.avatar_url}
-                                            onChange={handleChange}
-                                            placeholder={t("form.placeholders.avatarUrl")}
-                                            className={`rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20 ${errors.avatar_url ? 'ring-2 ring-destructive' : ''}`}
-                                            containerClassName="w-full"
-                                            error={errors.avatar_url}
-                                            label={t("form.avatarUrl")}
-                                        />
-                                    </div>
-
                                     {/* Basic Info Grid */}
                                     <div className="grid grid-cols-2 gap-6 focus-visible:outline-none">
                                         <Input
@@ -402,7 +374,7 @@ export function DoctorForm({ visible, onClose, selectedDoctor, specializations }
                                     className="flex-1 h-14 rounded-[1.5rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 gap-2 transition-all hover:scale-[1.02]"
                                     onClick={handleSubmit}
                                 >
-                                    {false ? (
+                                    {isLoading ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
                                         <Save className="w-4 h-4" />

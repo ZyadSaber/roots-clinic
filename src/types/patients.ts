@@ -63,6 +63,9 @@ export interface VitalRecord {
   recorded_at: string;
 }
 
+export type { RadiologyAsset } from "@/types/radiology";
+import type { RadiologyAsset } from "@/types/radiology";
+
 export interface VisitRecord {
   id: string;
   appointment_id: string;
@@ -77,14 +80,6 @@ export interface VisitRecord {
   doctor_specialty_ar: string;
   created_at: string;
   assets?: RadiologyAsset[];
-}
-
-export interface RadiologyAsset {
-  id: string;
-  image_type: "panoramic" | "bitewing" | "periapical" | string;
-  image_url: string;
-  notes: string | null;
-  taken_at: string;
 }
 
 export interface InvoiceRecord {

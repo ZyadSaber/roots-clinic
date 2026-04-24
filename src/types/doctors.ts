@@ -15,7 +15,6 @@ export interface DoctorSummary {
   consultation_fee: number;
   status: DoctorStatus;
   rating: number;
-  avatar_url?: string;
   review_count: number;
   years_experience: number;
   specialty_id: string;
@@ -35,7 +34,6 @@ export type DoctorFormData = {
   specialty_id: string;
   consultation_fee: number;
   status: string;
-  avatar_url?: string;
   years_experience: number;
   phone?: string;
   schedule: {

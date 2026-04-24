@@ -2,6 +2,75 @@
 
 import { queryOne, queryMany, execute } from "@/lib/pg";
 import { VisitRecord, RadiologyAsset } from "@/types/patients";
+import { VisitRecordRow, VisitRecordStats } from "@/types/records";
+
+export async function getVisitRecords(
+  dateFrom: Date,
+  dateTo: Date,
+): Promise<VisitRecordRow[]> {
+  const start = new Date(dateFrom);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(dateTo);
+  end.setHours(23, 59, 59, 999);
+
+  return queryMany<VisitRecordRow>({
+    sql: `
+      SELECT
+        vr.id,
+        vr.appointment_id,
+        vr.patient_id,
+        p.full_name           AS patient_name,
+        p.patient_code,
+        vr.doctor_id,
+        s.full_name           AS doctor_name,
+        COALESCE(sp.english_name, '') AS specialty_en,
+        COALESCE(sp.arabic_name, '')  AS specialty_ar,
+        vr.diagnosis,
+        a.procedure_type,
+        vr.procedure_done,
+        vr.procedure_notes,
+        vr.prescription,
+        vr.follow_up_date,
+        vr.created_at,
+        (SELECT COUNT(*)::int FROM radiology_assets ra WHERE ra.visit_id = vr.id) AS radiology_count
+      FROM visit_records vr
+      JOIN patients      p  ON vr.patient_id    = p.id
+      JOIN doctors       d  ON vr.doctor_id     = d.id
+      JOIN staff         s  ON d.staff_id       = s.id
+      LEFT JOIN specialties sp ON d.specialty_id = sp.id
+      LEFT JOIN appointments a  ON vr.appointment_id = a.id
+      WHERE vr.created_at BETWEEN $1 AND $2
+      ORDER BY vr.created_at DESC
+    `,
+    params: [start.toISOString(), end.toISOString()],
+  });
+}
+
+export async function getVisitRecordStats(
+  dateFrom: Date,
+  dateTo: Date,
+): Promise<VisitRecordStats> {
+  const start = new Date(dateFrom);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(dateTo);
+  end.setHours(23, 59, 59, 999);
+
+  const row = await queryOne<VisitRecordStats>({
+    sql: `
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE follow_up_date IS NOT NULL)::int                        AS with_follow_up,
+        COUNT(*) FILTER (WHERE prescription IS NOT NULL AND prescription <> '')::int   AS with_prescription,
+        COUNT(*) FILTER (
+          WHERE EXISTS (SELECT 1 FROM radiology_assets ra WHERE ra.visit_id = vr.id)
+        )::int AS with_radiology
+      FROM visit_records vr
+      WHERE vr.created_at BETWEEN $1 AND $2
+    `,
+    params: [start.toISOString(), end.toISOString()],
+  });
+  return row ?? { total: 0, with_follow_up: 0, with_prescription: 0, with_radiology: 0 };
+}
 
 export async function getVisitByAppointmentId(
   appointmentId: string,

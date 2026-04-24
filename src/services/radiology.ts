@@ -1,20 +1,7 @@
 "use server";
 
-import { queryMany, queryOne, execute, executeTransaction } from "@/lib/pg";
-import { RadiologyRequest } from "@/types/appointments";
-
-export interface RadiologyRecord {
-    id: string;
-    patient_id: string;
-    patient_name: string;
-    patient_code: string;
-    visit_id: string | null;
-    uploaded_by_name: string | null;
-    image_type: "panoramic" | "bitewing" | "periapical" | string;
-    image_url: string;
-    notes: string | null;
-    taken_at: string;
-}
+import { queryMany, queryOne, executeTransaction } from "@/lib/pg";
+import { RadiologyRequest, RadiologyRecord, RadiologyStats } from "@/types/radiology";
 
 export async function getRadiologyAssets(
     dateFrom: Date,
@@ -51,7 +38,7 @@ export async function getRadiologyAssets(
 export async function getRadiologyStats(
     dateFrom: Date,
     dateTo: Date,
-): Promise<{ total: number; panoramic: number; bitewing: number; periapical: number }> {
+): Promise<RadiologyStats> {
     const start = new Date(dateFrom);
     start.setHours(0, 0, 0, 0);
     const end = new Date(dateTo);

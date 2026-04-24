@@ -391,6 +391,32 @@
       "passwordsMustMatch": "Passwords must match"
     }
   },
+  "Records": {
+    "dateFrom": "Date From",
+    "dateTo": "Date To",
+    "noRecords": "No visit records found for the selected period.",
+    "selectToView": "Select a record to view details",
+    "stats": {
+      "total": "Total Visits",
+      "withFollowUp": "Follow-ups",
+      "withPrescription": "Prescriptions",
+      "withRadiology": "With X-rays"
+    },
+    "detail": {
+      "patient": "Patient",
+      "doctor": "Doctor",
+      "specialty": "Specialty",
+      "date": "Visit Date",
+      "diagnosis": "Diagnosis",
+      "procedureType": "Procedure Type",
+      "procedureDone": "Procedure Done",
+      "procedureNotes": "Clinical Notes",
+      "prescription": "Prescription",
+      "followUp": "Follow-up Date",
+      "radiology": "Radiology Images",
+      "noRadiology": "No radiology images for this visit"
+    }
+  },
   "Radiology": {
     "title": "Radiology",
     "desc": "Manage patient imaging records and X-ray assets",
@@ -435,7 +461,9 @@
       "upload": "Upload & Complete",
       "uploading": "Uploading…",
       "uploadSuccess": "X-ray uploaded — {name}",
-      "uploadError": "Upload failed"
+      "uploadError": "Upload failed",
+      "cancel": "Cancel",
+      "retry": "Retry"
     }
   },
   "Appointments": {

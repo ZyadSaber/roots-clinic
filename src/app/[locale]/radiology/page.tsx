@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/Date"
 import { UploadRadiologyDialog } from "@/components/radiology/UploadRadiologyDialog"
-import { RadiologyRequest } from "@/types/appointments"
+import { RadiologyViewer } from "@/components/radiology/RadiologyViewer"
+import { RadiologyRequest } from "@/types/radiology"
 import { RootState } from "@/store/store"
 import { format } from "date-fns"
 
@@ -39,6 +40,7 @@ export default function RadiologyPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [activeRequest, setActiveRequest] = useState<RadiologyRequest | null>(null)
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+    const [viewerSrc, setViewerSrc] = useState<string | null>(null)
 
     const { data: records = [], isLoading: loadingRecords, error } = useQuery({
         queryKey: ["radiology-assets", dateFrom, dateTo],
@@ -101,6 +103,13 @@ export default function RadiologyPage() {
                 onSuccess={handleUploadSuccess}
                 uploadedBy={staffId}
             />
+
+            {viewerSrc && (
+                <RadiologyViewer
+                    src={viewerSrc}
+                    onClose={() => setViewerSrc(null)}
+                />
+            )}
 
             <div className="flex flex-col w-0 min-w-full h-[calc(100vh-4rem)] overflow-hidden relative">
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 scrollbar-hide min-w-0 w-full">
@@ -238,7 +247,11 @@ export default function RadiologyPage() {
                                                 }`}
                                             >
                                                 <div className="flex gap-4">
-                                                    <div className="w-20 h-20 rounded-lg bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); setViewerSrc(record.image_url) }}
+                                                        className="w-20 h-20 rounded-lg bg-secondary flex items-center justify-center shrink-0 overflow-hidden hover:ring-2 hover:ring-primary/40 transition-all"
+                                                    >
                                                         {record.image_url ? (
                                                             // eslint-disable-next-line @next/next/no-img-element
                                                             <img
@@ -249,7 +262,7 @@ export default function RadiologyPage() {
                                                         ) : (
                                                             <Image className="w-8 h-8 text-muted-foreground" />
                                                         )}
-                                                    </div>
+                                                    </button>
                                                     <div className="flex-1 space-y-2 min-w-0">
                                                         <div className="flex items-center justify-between gap-2">
                                                             <span className="font-mono text-xs text-muted-foreground truncate">
@@ -344,11 +357,14 @@ export default function RadiologyPage() {
                                             )}
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="outline" size="sm" className="flex-1" asChild>
-                                                <a href={selected.image_url} target="_blank" rel="noopener noreferrer">
-                                                    <Eye className="w-4 h-4 me-1" />
-                                                    {t("view")}
-                                                </a>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => setViewerSrc(selected.image_url)}
+                                            >
+                                                <Eye className="w-4 h-4 me-1" />
+                                                {t("view")}
                                             </Button>
                                             <Button variant="outline" size="sm" className="flex-1" asChild>
                                                 <a href={selected.image_url} download>

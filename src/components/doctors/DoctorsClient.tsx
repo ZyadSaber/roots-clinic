@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, ArrowRight, Settings2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Settings2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import useVisibility from "@/hooks/useVisibility";
+import DoctorCard from "@/components/doctors/DoctorCard";
 import { DoctorForm } from "@/components/doctors/DoctorForm";
 import { SpecialtiesDialog } from "@/components/doctors/SpecialtiesDialog";
 import { getLocalizedValue } from "@/lib/localize";
@@ -180,41 +178,14 @@ export default function DoctorsClient({ doctors }: DoctorsClientProps) {
 
                     {/* Doctor Cards Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {doctors.map((doc, i) => (
-                            <Card
-                                key={i}
+                        {doctors.map((doc) => (
+                            <DoctorCard
+                                key={doc.id}
+                                doc={doc}
+                                isSelected={selectedDoctorId === doc.id}
+                                locale={locale}
                                 onClick={() => handleDoctorClick(doc)}
-                                className={`rounded-3xl cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-accent/5 ${selectedDoctor?.name === doc.name ? 'border-2 border-primary ring-4 ring-primary/5 shadow-xl shadow-primary/5' : 'border-border/50 hover:border-primary/50'}`}
-                            >
-                                <CardHeader className="p-6">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <Avatar className="w-16 h-16 rounded-2xl border-2 border-background shadow-lg">
-                                            <AvatarImage src={doc.avatar_url} className="object-cover" />
-                                            <AvatarFallback className="font-black">{doc.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
-                                        </Avatar>
-                                        <Badge className={`rounded-lg px-2 py-0.5 font-black text-[10px] leading-tight border-none 
-                                        ${doc.status === 'available' ? 'bg-green-100 text-green-700' :
-                                                doc.status === 'on_break' ? 'bg-blue-100 text-blue-700' :
-                                                    'bg-accent text-muted-foreground'
-                                            }`}>
-                                            {t(doc.status.toLowerCase().replace(/\s+/g, '')).toUpperCase()}
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="text-lg font-black">{doc.name}</CardTitle>
-                                    <p className={`text-sm font-bold ${selectedDoctor?.name === doc.name ? 'text-primary' : 'text-muted-foreground'}`}>
-                                        {getLocalizedValue({ en: doc.en, ar: doc.ar }, locale)}
-                                    </p>
-                                </CardHeader>
-                                <CardContent className="p-6 pt-0">
-                                    <div className="flex items-center justify-between border-t border-border/40 pt-4">
-                                        <div>
-                                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mb-1">{t("fee")}</p>
-                                            <p className="text-xl font-black tabular-nums">{tc("currency")} {Number(doc?.consultation_fee).toFixed(2)}</p>
-                                        </div>
-                                        <ArrowRight className={`w-5 h-5 ${selectedDoctor?.name === doc.name ? 'text-primary' : 'text-muted-foreground'} group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180 transition-transform`} />
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            />
                         ))}
                     </div>
                 </div>

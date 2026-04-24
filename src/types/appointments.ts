@@ -40,22 +40,7 @@ export interface AppointmentPayload {
   notes?: string;
 }
 
-export type RadiologyRequestStatus = "pending" | "completed";
-
-export interface RadiologyRequest {
-  id: string;
-  appointment_id: string;
-  visit_id: string | null;
-  patient_id: string;
-  patient_name: string;
-  patient_code: string;
-  doctor_name: string | null;
-  procedure_type: string | null;
-  appointment_date: string;
-  status: RadiologyRequestStatus;
-  requested_at: string;
-  completed_at: string | null;
-}
+export type { RadiologyRequestStatus, RadiologyRequest } from "@/types/radiology";
 
 export interface AppointmentFilters {
   search: string;

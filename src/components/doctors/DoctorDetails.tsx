@@ -2,7 +2,7 @@ import { Edit2, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DoctorSummary } from "@/types/doctors";
 import { useLocale, useTranslations } from "next-intl";
@@ -84,7 +84,6 @@ const DoctorDetails = ({ visible, selectedDoctor, handleClose, handleOpenForm }:
                 <div className="p-8 border-b border-border/40 bg-accent/10">
                     <div className="flex items-center gap-6 mb-8">
                         <Avatar className="w-24 h-24 rounded-3xl border-4 border-background shadow-2xl">
-                            <AvatarImage src={selectedDoctor.avatar_url} className="object-cover" />
                             <AvatarFallback className="text-2xl font-black">
                                 {selectedDoctor.name.split(' ').map((n: string) => n[0]).join('')}
                             </AvatarFallback>

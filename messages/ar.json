@@ -407,6 +407,32 @@
       "passwordsMustMatch": "كلمات المرور يجب أن تتطابق"
     }
   },
+  "Records": {
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "noRecords": "لا توجد سجلات زيارات للفترة المحددة.",
+    "selectToView": "اختر سجلاً لعرض التفاصيل",
+    "stats": {
+      "total": "إجمالي الزيارات",
+      "withFollowUp": "متابعات",
+      "withPrescription": "وصفات طبية",
+      "withRadiology": "مع أشعة"
+    },
+    "detail": {
+      "patient": "المريض",
+      "doctor": "الطبيب",
+      "specialty": "التخصص",
+      "date": "تاريخ الزيارة",
+      "diagnosis": "التشخيص",
+      "procedureType": "نوع الإجراء",
+      "procedureDone": "الإجراء المنفذ",
+      "procedureNotes": "الملاحظات السريرية",
+      "prescription": "الوصفة الطبية",
+      "followUp": "تاريخ المتابعة",
+      "radiology": "صور الأشعة",
+      "noRadiology": "لا توجد صور أشعة لهذه الزيارة"
+    }
+  },
   "Radiology": {
     "title": "الأشعة",
     "desc": "إدارة صور الأشعة وسجلات التصوير الطبي",
@@ -451,7 +477,9 @@
       "upload": "رفع وإتمام",
       "uploading": "جارٍ الرفع…",
       "uploadSuccess": "تم رفع الأشعة — {name}",
-      "uploadError": "فشل الرفع"
+      "uploadError": "فشل الرفع",
+      "cancel": "إلغاء",
+      "retry": "إعادة المحاولة"
     }
   },
   "Appointments": {
