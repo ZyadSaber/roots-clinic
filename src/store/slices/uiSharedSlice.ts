@@ -5,6 +5,7 @@ interface UISharedState {
   sidebarCollapsed: boolean;
   activeNotifications: number;
   isOnline: boolean;
+  dashboardDate: string;
 }
 
 const initialState: UISharedState = {
@@ -12,6 +13,7 @@ const initialState: UISharedState = {
   sidebarCollapsed: false,
   activeNotifications: 0,
   isOnline: true,
+  dashboardDate: new Date().toISOString(),
 };
 
 const uiSharedSlice = createSlice({
@@ -33,6 +35,9 @@ const uiSharedSlice = createSlice({
     setOnlineStatus: (state, action: PayloadAction<boolean>) => {
       state.isOnline = action.payload;
     },
+    setDashboardDate: (state, action: PayloadAction<string>) => {
+      state.dashboardDate = action.payload;
+    },
   },
 });
 
@@ -42,5 +47,6 @@ export const {
   setSidebarCollapsed,
   setNotificationsCount,
   setOnlineStatus,
+  setDashboardDate,
 } = uiSharedSlice.actions;
 export default uiSharedSlice.reducer;

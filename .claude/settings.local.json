@@ -9,7 +9,10 @@
       "Bash(git -C /home/zyad/roots-clinic diff --stat HEAD)",
       "Bash(git *)",
       "Bash(xargs grep *)",
-      "Bash(./node_modules/.bin/tsc --noEmit)"
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(awk '{print $NF}')",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(bunx tsc *)"
     ]
   }
 }

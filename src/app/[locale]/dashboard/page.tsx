@@ -1,18 +1,304 @@
-import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
-import DashboardClient from "./DashboardClient"
+"use client"
 
-export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
-    const { locale } = await params
-    const supabase = await createClient()
+import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
+import { useQuery } from "@tanstack/react-query"
+import Link from "next/link"
+import { format, isToday } from "date-fns"
+import { setDashboardDate } from "@/store/slices/uiSharedSlice"
+import type { AppDispatch, RootState } from "@/store/store"
+import {
+    Users, CalendarCheck2, Stethoscope, ScanLine,
+    CalendarPlus, UserPlus, Receipt,
+    CheckCircle2,
+    ChevronRight, Activity,
+} from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import {
+    getDashboardStats,
+    getDashboardAppointments,
+    getPendingRadiologyQueue,
+    type DashboardStats,
+    type DashboardAppointment,
+    type PendingRadiologyItem,
+} from "@/services/dashboard"
+import { StatCard } from "@/components/dashboard/StatCard"
+import { AppointmentRow } from "@/components/dashboard/AppointmentRow"
+import { RadiologyQueueItem } from "@/components/dashboard/RadiologyQueueItem"
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) redirect(`/${locale}`)
+export default function DashboardPage() {
+    const { locale } = useParams<{ locale: string }>()
+    const today = useMemo(() => new Date(), [])
+    const dispatch = useDispatch<AppDispatch>()
+    const { user } = useSelector((state: RootState) => state.auth)
+    const username = user?.full_name?.split(" ")[0] ?? user?.username ?? "Doctor"
+    const [calDate, setCalDate] = useState<Date | undefined>(today)
 
-    const username =
-        user.user_metadata?.full_name?.split(" ")[0] ||
-        user.email?.split("@")[0] ||
-        "Doctor"
+    function handleCalDateChange(date: Date | undefined) {
+        setCalDate(date)
+        dispatch(setDashboardDate((date ?? today).toISOString()))
+    }
 
-    return <DashboardClient locale={locale} username={username} />
+    const selectedDate = calDate ?? today
+    const selectedDateStr = selectedDate.toDateString()
+    const isSelectedToday = isToday(selectedDate)
+
+    const { data: stats } = useQuery<DashboardStats>({
+        queryKey: ["dashboard-stats", selectedDateStr],
+        queryFn: () => getDashboardStats(selectedDate),
+        staleTime: 1000 * 60,
+        initialData: {
+            total_appointments: 0, pending: 0, confirmed: 0, arrived: 0,
+            in_chair: 0, completed: 0, cancelled: 0, no_show: 0,
+            total_visits: 0, pending_radiology: 0,
+        },
+    })
+
+    const { data: appointments = [] } = useQuery<DashboardAppointment[]>({
+        queryKey: ["dashboard-appointments", selectedDateStr],
+        queryFn: () => getDashboardAppointments(selectedDate),
+        staleTime: 1000 * 60,
+    })
+
+    const { data: radiology = [] } = useQuery<PendingRadiologyItem[]>({
+        queryKey: ["dashboard-radiology-queue"],
+        queryFn: () => getPendingRadiologyQueue(),
+        staleTime: 1000 * 30,
+    })
+
+    const activeCount = stats.arrived + stats.in_chair
+    const progressPct = stats.total_appointments > 0
+        ? Math.round((stats.completed / stats.total_appointments) * 100)
+        : 0
+
+    return (
+        <div className="flex flex-col w-0 min-w-full h-[calc(100vh-4rem)] overflow-hidden">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide p-8 space-y-8">
+
+                {/* ── Header ── */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+                    <div>
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                            {format(today, "EEEE, MMMM d, yyyy")}
+                        </p>
+                        <h1 className="text-3xl font-black tracking-tight">{username}</h1>
+                        <p className="text-muted-foreground font-medium mt-1">
+                            Here&apos;s what&apos;s happening at the clinic today.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Link href={`/${locale}/patients`}>
+                            <Button className="rounded-2xl h-11 px-5 gap-2 font-bold shadow-lg shadow-primary/20 text-sm">
+                                <UserPlus className="w-4 h-4" /> Register Patient
+                            </Button>
+                        </Link>
+                        <Link href={`/${locale}/appointments`}>
+                            <Button variant="outline" className="rounded-2xl h-11 px-5 gap-2 font-bold bg-background shadow-xs text-sm">
+                                <CalendarPlus className="w-4 h-4" /> Book Appointment
+                            </Button>
+                        </Link>
+                        <Link href={`/${locale}/finance`}>
+                            <Button variant="outline" className="rounded-2xl h-11 px-5 gap-2 font-bold bg-background shadow-xs text-sm">
+                                <Receipt className="w-4 h-4" /> Finance
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+
+                {/* ── Stat Cards ── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard
+                        icon={<Users className="w-5 h-5" />}
+                        iconBg="bg-primary/10 text-primary"
+                        label="Appointments"
+                        value={stats.total_appointments}
+                        sub={
+                            <div className="flex gap-3 mt-1">
+                                <span className="text-xs text-muted-foreground">Pending <b className="text-foreground">{stats.pending + stats.confirmed}</b></span>
+                                <span className="text-xs text-muted-foreground">Done <b className="text-green-600">{stats.completed}</b></span>
+                            </div>
+                        }
+                        href={`/${locale}/appointments`}
+                    />
+                    <StatCard
+                        icon={<Activity className="w-5 h-5" />}
+                        iconBg="bg-amber-100 text-amber-600"
+                        label="Active Right Now"
+                        value={activeCount}
+                        badge={stats.in_chair > 0 ? { label: `${stats.in_chair} in chair`, className: "bg-primary/10 text-primary" } : undefined}
+                        sub={
+                            <span className="text-xs text-muted-foreground">{stats.arrived} arrived, waiting</span>
+                        }
+                        href={`/${locale}/appointments`}
+                    />
+                    <StatCard
+                        icon={<CalendarCheck2 className="w-5 h-5" />}
+                        iconBg="bg-green-100 text-green-600"
+                        label="Completed Visits"
+                        value={stats.total_visits}
+                        badge={progressPct > 0 ? { label: `${progressPct}% done`, className: "bg-green-100 text-green-700" } : undefined}
+                        sub={
+                            <span className="text-xs text-muted-foreground">visit records saved</span>
+                        }
+                        href={`/${locale}/records`}
+                    />
+                    <StatCard
+                        icon={<ScanLine className="w-5 h-5" />}
+                        iconBg="bg-chart-5/10 text-chart-5"
+                        label="Pending Imaging"
+                        value={stats.pending_radiology}
+                        badge={stats.pending_radiology > 0 ? { label: "Awaiting", className: "bg-orange-100 text-orange-600" } : undefined}
+                        sub={
+                            <span className="text-xs text-muted-foreground">radiology requests</span>
+                        }
+                        href={`/${locale}/radiology`}
+                    />
+                </div>
+
+                {/* ── Status Pipeline ── */}
+                <div className="grid grid-cols-5 gap-2">
+                    {[
+                        { key: "pending", label: "Pending", count: stats.pending, color: "bg-muted/50 text-muted-foreground" },
+                        { key: "confirmed", label: "Confirmed", count: stats.confirmed, color: "bg-blue-100 text-blue-700" },
+                        { key: "arrived", label: "Arrived", count: stats.arrived, color: "bg-amber-100 text-amber-700" },
+                        { key: "in_chair", label: "In Chair", count: stats.in_chair, color: "bg-primary/10 text-primary" },
+                        { key: "completed", label: "Completed", count: stats.completed, color: "bg-green-100 text-green-700" },
+                    ].map(({ key, label, count, color }, i) => (
+                        <div key={key} className="relative">
+                            <div className={`rounded-2xl px-4 py-3 flex flex-col items-center gap-1 ${color}`}>
+                                <span className="text-2xl font-black tabular-nums">{count}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">{label}</span>
+                            </div>
+                            {i < 4 && (
+                                <ChevronRight className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-border z-10" />
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* ── Main Grid ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                    {/* Appointments Table */}
+                    <div className="lg:col-span-8">
+                        <Card className="rounded-3xl border border-border/50 shadow-sm bg-card">
+                            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border/40">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                                        <Stethoscope className="w-4.5 h-4.5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="font-black text-base">
+                                            {isSelectedToday ? "Today's Schedule" : format(selectedDate, "MMMM d, yyyy")}
+                                        </h2>
+                                        <p className="text-xs text-muted-foreground font-medium">
+                                            {format(selectedDate, "MMMM d")} · {stats.total_appointments} appointments
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link href={`/${locale}/appointments`}>
+                                    <Button variant="ghost" size="sm" className="rounded-xl font-bold text-primary hover:bg-primary/5 gap-1 text-xs">
+                                        View all <ChevronRight className="w-3.5 h-3.5" />
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            <CardContent className="p-0">
+                                {appointments.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+                                        <CalendarCheck2 className="w-10 h-10 opacity-20" />
+                                        <p className="text-sm font-medium">No appointments scheduled{isSelectedToday ? " today" : ` on ${format(selectedDate, "MMM d")}`}</p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-border/40">
+                                        {appointments.map((appt) => (
+                                            <AppointmentRow key={appt.id} appt={appt} />
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Right sidebar */}
+                    <div className="lg:col-span-4 flex flex-col gap-5">
+
+                        {/* Calendar */}
+                        <Card className="rounded-3xl border border-border/50 shadow-sm bg-card p-4">
+                            <Calendar
+                                mode="single"
+                                selected={calDate}
+                                onSelect={handleCalDateChange}
+                                defaultMonth={today}
+                                className="rounded-2xl border-none p-0 mx-auto"
+                                classNames={{
+                                    head_cell: "text-muted-foreground rounded-md w-9 font-bold text-[10px] uppercase tracking-widest",
+                                    cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:z-20",
+                                    day: "h-9 w-9 p-0 font-bold aria-selected:opacity-100 hover:bg-accent rounded-xl transition-all",
+                                    day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground shadow-lg shadow-primary/20",
+                                    day_today: "bg-accent/50 text-accent-foreground font-black",
+                                    day_outside: "text-muted-foreground opacity-30",
+                                    nav_button: "hover:bg-accent rounded-lg p-1 transition-all",
+                                }}
+                            />
+                        </Card>
+
+                        {/* Pending Radiology */}
+                        <Card className="rounded-3xl border border-border/50 shadow-sm bg-card">
+                            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border/40">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-xl bg-chart-5/10 text-chart-5 flex items-center justify-center">
+                                        <ScanLine className="w-4 h-4" />
+                                    </div>
+                                    <h2 className="font-black text-sm">Imaging Queue</h2>
+                                </div>
+                                <Link href={`/${locale}/radiology`}>
+                                    <Button variant="ghost" size="sm" className="rounded-xl font-bold text-primary hover:bg-primary/5 gap-1 text-xs h-7 px-2">
+                                        View <ChevronRight className="w-3 h-3" />
+                                    </Button>
+                                </Link>
+                            </div>
+                            <CardContent className="p-3">
+                                {radiology.length === 0 ? (
+                                    <div className="flex flex-col items-center py-8 gap-2 text-muted-foreground">
+                                        <CheckCircle2 className="w-8 h-8 opacity-20" />
+                                        <p className="text-xs font-medium">No pending requests</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-2">
+                                        {radiology.map((item) => (
+                                            <RadiologyQueueItem key={item.id} item={item} />
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Quick Links */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {[
+                                { label: "Patients", icon: Users, href: `/${locale}/patients`, color: "text-primary bg-primary/10" },
+                                { label: "Records", icon: CalendarCheck2, href: `/${locale}/records`, color: "text-chart-2 bg-chart-2/10" },
+                                { label: "Radiology", icon: ScanLine, href: `/${locale}/radiology`, color: "text-chart-5 bg-chart-5/10" },
+                                { label: "Doctors", icon: Stethoscope, href: `/${locale}/doctors`, color: "text-amber-600 bg-amber-100" },
+                            ].map(({ label, icon: Icon, href, color }) => (
+                                <Link key={label} href={href}>
+                                    <div className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border/50 bg-card hover:bg-accent/30 hover:border-primary/20 transition-all cursor-pointer group">
+                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color} group-hover:scale-110 transition-transform`}>
+                                            <Icon className="w-4.5 h-4.5" />
+                                        </div>
+                                        <span className="text-xs font-black">{label}</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 }
+

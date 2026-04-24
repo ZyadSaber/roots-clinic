@@ -567,5 +567,174 @@
       "field": "Field",
       "value": "Value"
     }
+  },
+  "Finance": {
+    "title": "Financial Overview",
+    "description": "Track revenue, expenses, and invoices",
+    "newInvoice": "New Invoice",
+    "addExpense": "Add Expense",
+    "export": "Export",
+    "statCards": {
+      "monthlyRevenue": "Monthly Revenue",
+      "monthlyExpenses": "Monthly Expenses",
+      "outstanding": "Outstanding",
+      "netProfit": "Net Profit",
+      "invoices": "invoices",
+      "vsLastMonth": "vs last month",
+      "todayBench": "Today's Bench",
+      "income": "Income",
+      "expenses": "Expenses",
+      "selectedPeriod": "Selected Period",
+      "periodRevenue": "Period Revenue",
+      "periodExpenses": "Period Expenses",
+      "periodOutstanding": "Period Outstanding",
+      "periodNetProfit": "Period Net Profit"
+    },
+    "tabs": {
+      "invoices": "Invoices",
+      "expenses": "Expenses",
+      "insurance": "Insurance Claims"
+    },
+    "invoices": {
+      "title": "Invoices",
+      "invoiceNumber": "Invoice #",
+      "patient": "Patient",
+      "date": "Date",
+      "dueDate": "Due Date",
+      "status": "Status",
+      "amount": "Amount",
+      "outstanding": "Outstanding",
+      "actions": "Actions",
+      "viewDetails": "View Details",
+      "recordPayment": "Record Payment",
+      "updateStatus": "Update Status",
+      "createClaim": "Create Insurance Claim",
+      "noInvoices": "No invoices found.",
+      "statuses": {
+        "all": "All Statuses",
+        "draft": "Draft",
+        "pending": "Pending",
+        "partial": "Partial",
+        "paid": "Paid",
+        "overdue": "Overdue",
+        "cancelled": "Cancelled"
+      },
+      "form": {
+        "createTitle": "New Invoice",
+        "viewTitle": "Invoice Details",
+        "selectPatient": "Select Patient",
+        "selectVisit": "Link to Visit (optional)",
+        "dueDate": "Due Date",
+        "discount": "Discount (EGP)",
+        "tax": "Tax (EGP)",
+        "notes": "Notes",
+        "addItem": "Add Line Item",
+        "serviceName": "Service / Procedure",
+        "doctor": "Doctor (optional)",
+        "quantity": "Qty",
+        "unitPrice": "Unit Price",
+        "discountPct": "Disc %",
+        "lineTotal": "Total",
+        "subtotal": "Subtotal",
+        "grandTotal": "Grand Total",
+        "create": "Create Invoice",
+        "creating": "Creating...",
+        "itemsStep": "Line Items",
+        "headerStep": "Invoice Details",
+        "next": "Next",
+        "back": "Back"
+      }
+    },
+    "payments": {
+      "paymentRef": "Payment Ref",
+      "method": "Method",
+      "paidAt": "Paid At",
+      "form": {
+        "title": "Record Payment",
+        "invoiceSummary": "Invoice Summary",
+        "amount": "Amount (EGP)",
+        "method": "Payment Method",
+        "transactionRef": "Transaction Reference",
+        "notes": "Notes",
+        "methods": {
+          "cash": "Cash",
+          "card": "Card",
+          "insurance": "Insurance",
+          "bank_transfer": "Bank Transfer"
+        },
+        "submit": "Record Payment",
+        "submitting": "Recording..."
+      }
+    },
+    "expenses": {
+      "title": "Expenses",
+      "expenseTitle": "Title",
+      "description": "Description",
+      "category": "Category",
+      "department": "Department",
+      "date": "Date",
+      "status": "Status",
+      "amount": "Amount",
+      "actions": "Actions",
+      "noExpenses": "No expenses found.",
+      "categories": {
+        "all": "All Categories",
+        "fixed": "Fixed",
+        "inventory": "Inventory",
+        "personnel": "Personnel",
+        "service": "Service",
+        "utility": "Utility",
+        "other": "Other"
+      },
+      "statuses": {
+        "all": "All Statuses",
+        "paid": "Paid",
+        "pending": "Pending",
+        "overdue": "Overdue"
+      },
+      "form": {
+        "createTitle": "Add Expense",
+        "editTitle": "Edit Expense",
+        "title": "Title",
+        "description": "Description",
+        "category": "Category",
+        "department": "Department",
+        "amount": "Amount (EGP)",
+        "status": "Status",
+        "date": "Expense Date",
+        "create": "Add Expense",
+        "save": "Save Changes",
+        "saving": "Saving..."
+      }
+    },
+    "insurance": {
+      "provider": "Provider",
+      "policyNumber": "Policy #",
+      "claimedAmount": "Claimed",
+      "approvedAmount": "Approved",
+      "status": "Status",
+      "noClams": "No insurance claims found.",
+      "statuses": {
+        "all": "All Statuses",
+        "pending": "Pending",
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "partial": "Partial"
+      },
+      "form": {
+        "createTitle": "Create Insurance Claim",
+        "updateTitle": "Update Claim Status",
+        "provider": "Insurance Provider",
+        "policyNumber": "Policy Number",
+        "claimedAmount": "Claimed Amount (EGP)",
+        "approvedAmount": "Approved Amount (EGP)",
+        "status": "Claim Status",
+        "notes": "Notes",
+        "submit": "Submit Claim",
+        "update": "Update Claim",
+        "submitting": "Submitting..."
+      }
+    }
   }
 }

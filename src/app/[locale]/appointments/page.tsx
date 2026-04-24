@@ -1,8 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useSelector } from "react-redux"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
+import type { RootState } from "@/store/store"
 import { AlertTriangle, Calendar } from "lucide-react"
 import { getAllAppointments, getAppointmentsStatsByDate } from "@/services/appointments"
 import { getDoctorAppointments } from "@/services/doctors"
@@ -22,7 +24,8 @@ export default function AppointmentsPage() {
     const commonT = useTranslations("Common")
     const errorT = useTranslations("Errors.applicationError.505")
     const tTitle = useTranslations("Routes")
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const dashboardDate = useSelector((s: RootState) => s.uiShared.dashboardDate)
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date(dashboardDate))
     const [recordAppointment, setRecordAppointment] = useState<Appointment | null>(null)
 
     const {

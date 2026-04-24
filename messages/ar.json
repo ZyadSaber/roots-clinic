@@ -585,5 +585,174 @@
       "field": "الحقل",
       "value": "القيمة"
     }
+  },
+  "Finance": {
+    "title": "النظرة المالية العامة",
+    "description": "تتبع الإيرادات والمصروفات والفواتير",
+    "newInvoice": "فاتورة جديدة",
+    "addExpense": "إضافة مصروف",
+    "export": "تصدير",
+    "statCards": {
+      "monthlyRevenue": "إيرادات الشهر",
+      "monthlyExpenses": "مصروفات الشهر",
+      "outstanding": "مستحق الدفع",
+      "netProfit": "صافي الربح",
+      "invoices": "فاتورة",
+      "vsLastMonth": "مقارنة بالشهر الماضي",
+      "todayBench": "رصيد اليوم",
+      "income": "دخل",
+      "expenses": "مصروفات",
+      "selectedPeriod": "الفترة المحددة",
+      "periodRevenue": "إيرادات الفترة",
+      "periodExpenses": "مصروفات الفترة",
+      "periodOutstanding": "المستحق في الفترة",
+      "periodNetProfit": "صافي ربح الفترة"
+    },
+    "tabs": {
+      "invoices": "الفواتير",
+      "expenses": "المصروفات",
+      "insurance": "مطالبات التأمين"
+    },
+    "invoices": {
+      "title": "الفواتير",
+      "invoiceNumber": "رقم الفاتورة",
+      "patient": "المريض",
+      "date": "التاريخ",
+      "dueDate": "تاريخ الاستحقاق",
+      "status": "الحالة",
+      "amount": "المبلغ",
+      "outstanding": "المتبقي",
+      "actions": "الإجراءات",
+      "viewDetails": "عرض التفاصيل",
+      "recordPayment": "تسجيل دفعة",
+      "updateStatus": "تحديث الحالة",
+      "createClaim": "إنشاء مطالبة تأمين",
+      "noInvoices": "لا توجد فواتير.",
+      "statuses": {
+        "all": "جميع الحالات",
+        "draft": "مسودة",
+        "pending": "معلقة",
+        "partial": "جزئية",
+        "paid": "مدفوعة",
+        "overdue": "متأخرة",
+        "cancelled": "ملغاة"
+      },
+      "form": {
+        "createTitle": "فاتورة جديدة",
+        "viewTitle": "تفاصيل الفاتورة",
+        "selectPatient": "اختر المريض",
+        "selectVisit": "ربط بزيارة (اختياري)",
+        "dueDate": "تاريخ الاستحقاق",
+        "discount": "خصم (ج.م)",
+        "tax": "ضريبة (ج.م)",
+        "notes": "ملاحظات",
+        "addItem": "إضافة بند",
+        "serviceName": "الخدمة / الإجراء",
+        "doctor": "الطبيب (اختياري)",
+        "quantity": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "discountPct": "خصم %",
+        "lineTotal": "الإجمالي",
+        "subtotal": "المجموع الفرعي",
+        "grandTotal": "الإجمالي الكلي",
+        "create": "إنشاء الفاتورة",
+        "creating": "جاري الإنشاء...",
+        "itemsStep": "بنود الفاتورة",
+        "headerStep": "تفاصيل الفاتورة",
+        "next": "التالي",
+        "back": "السابق"
+      }
+    },
+    "payments": {
+      "paymentRef": "رقم الدفعة",
+      "method": "طريقة الدفع",
+      "paidAt": "تاريخ الدفع",
+      "form": {
+        "title": "تسجيل دفعة",
+        "invoiceSummary": "ملخص الفاتورة",
+        "amount": "المبلغ (ج.م)",
+        "method": "طريقة الدفع",
+        "transactionRef": "رقم المعاملة",
+        "notes": "ملاحظات",
+        "methods": {
+          "cash": "نقدي",
+          "card": "بطاقة",
+          "insurance": "تأمين",
+          "bank_transfer": "تحويل بنكي"
+        },
+        "submit": "تسجيل الدفعة",
+        "submitting": "جاري التسجيل..."
+      }
+    },
+    "expenses": {
+      "title": "المصروفات",
+      "expenseTitle": "العنوان",
+      "description": "الوصف",
+      "category": "الفئة",
+      "department": "القسم",
+      "date": "التاريخ",
+      "status": "الحالة",
+      "amount": "المبلغ",
+      "actions": "الإجراءات",
+      "noExpenses": "لا توجد مصروفات.",
+      "categories": {
+        "all": "جميع الفئات",
+        "fixed": "ثابت",
+        "inventory": "مخزون",
+        "personnel": "كوادر",
+        "service": "خدمات",
+        "utility": "مرافق",
+        "other": "أخرى"
+      },
+      "statuses": {
+        "all": "جميع الحالات",
+        "paid": "مدفوع",
+        "pending": "معلق",
+        "overdue": "متأخر"
+      },
+      "form": {
+        "createTitle": "إضافة مصروف",
+        "editTitle": "تعديل المصروف",
+        "title": "العنوان",
+        "description": "الوصف",
+        "category": "الفئة",
+        "department": "القسم",
+        "amount": "المبلغ (ج.م)",
+        "status": "الحالة",
+        "date": "تاريخ المصروف",
+        "create": "إضافة المصروف",
+        "save": "حفظ التغييرات",
+        "saving": "جاري الحفظ..."
+      }
+    },
+    "insurance": {
+      "provider": "شركة التأمين",
+      "policyNumber": "رقم البوليصة",
+      "claimedAmount": "المطالبة",
+      "approvedAmount": "المعتمد",
+      "status": "الحالة",
+      "noClams": "لا توجد مطالبات تأمين.",
+      "statuses": {
+        "all": "جميع الحالات",
+        "pending": "معلقة",
+        "submitted": "مقدمة",
+        "approved": "معتمدة",
+        "rejected": "مرفوضة",
+        "partial": "جزئية"
+      },
+      "form": {
+        "createTitle": "إنشاء مطالبة تأمين",
+        "updateTitle": "تحديث حالة المطالبة",
+        "provider": "شركة التأمين",
+        "policyNumber": "رقم البوليصة",
+        "claimedAmount": "مبلغ المطالبة (ج.م)",
+        "approvedAmount": "المبلغ المعتمد (ج.م)",
+        "status": "حالة المطالبة",
+        "notes": "ملاحظات",
+        "submit": "تقديم المطالبة",
+        "update": "تحديث المطالبة",
+        "submitting": "جاري التقديم..."
+      }
+    }
   }
 }
