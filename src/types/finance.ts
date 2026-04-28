@@ -12,6 +12,8 @@ export interface FinanceKPIs {
   prev_month_expenses: number;
   total_outstanding: number;
   outstanding_invoice_count: number;
+  today_expenses: number;
+  today_income: number
 }
 
 export interface Invoice {
@@ -21,6 +23,7 @@ export interface Invoice {
   patient_name: string;
   patient_code: string;
   visit_id: string | null;
+  doctor_id: string | null;
   subtotal: number;
   discount: number;
   tax: number;
@@ -31,6 +34,12 @@ export interface Invoice {
   due_date: string | null;
   notes: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+export interface RadiologyPricing {
+  image_type: string;
+  price: number;
   updated_at: string;
 }
 
@@ -80,6 +89,7 @@ export interface InsuranceClaim {
   submitted_at: string | null;
   resolved_at: string | null;
   notes: string | null;
+  document_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -103,8 +113,6 @@ export interface InvoiceFilters {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
-  page?: number;
-  pageSize?: number;
 }
 
 export interface ExpenseFilters {
@@ -118,8 +126,8 @@ export interface ExpenseFilters {
 
 export interface InsuranceClaimFilters {
   status?: InsuranceClaimStatus | 'all';
-  page?: number;
-  pageSize?: number;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export interface CreateInvoicePayload {
@@ -169,11 +177,6 @@ export interface FinancePeriodStats {
   period_outstanding_count: number;
 }
 
-export interface FinanceTodayStats {
-  today_income: number;
-  today_expenses: number;
-}
-
 export interface CreateInsuranceClaimPayload {
   invoice_id: string;
   patient_id: string;
@@ -181,4 +184,21 @@ export interface CreateInsuranceClaimPayload {
   policy_number?: string;
   claimed_amount: number;
   notes?: string;
+}
+
+export interface InsuranceClaimDetail extends InsuranceClaim {
+  patient_name: string;
+  patient_code: string;
+  invoice_number: string;
+}
+
+export interface TodayPayment {
+  id: string;
+  payment_ref: string;
+  patient_name: string;
+  patient_code: string;
+  invoice_number: string;
+  amount: number;
+  method: PaymentMethod;
+  paid_at: string;
 }

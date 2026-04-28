@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import type { FinanceKPIs, FinancePeriodStats, FinanceTodayStats } from "@/types/finance";
-import type { DateRangeValue } from "./DateRangePicker";
+import type { FinanceKPIs, FinancePeriodStats } from "@/types/finance";
+import type { DateRangeValue } from "@/components/ui/DateRangePicker";
 
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat("en-EG", {
@@ -73,8 +73,8 @@ interface PeriodCardProps {
 function PeriodCard({ title, value, subtitle, icon, accent = "default" }: PeriodCardProps) {
   const accentClass =
     accent === "green" ? "bg-green-500/10 text-green-600" :
-    accent === "red"   ? "bg-destructive/10 text-destructive" :
-                         "bg-primary/10 text-primary";
+      accent === "red" ? "bg-destructive/10 text-destructive" :
+        "bg-primary/10 text-primary";
 
   return (
     <Card className="border-dashed">
@@ -92,7 +92,15 @@ function PeriodCard({ title, value, subtitle, icon, accent = "default" }: Period
 
 // ── Today's bench card (split) ────────────────────────────────────────────────
 
-function TodayBenchCard({ todayStats, currency }: { todayStats: FinanceTodayStats | undefined; currency: string }) {
+function TodayBenchCard({
+  today_income,
+  today_expenses,
+  currency
+}: {
+  today_income: number;
+  today_expenses: number;
+  currency: string
+}) {
   const t = useTranslations("Finance.statCards");
 
   return (
@@ -106,19 +114,11 @@ function TodayBenchCard({ todayStats, currency }: { todayStats: FinanceTodayStat
       <CardContent className="flex divide-x divide-border">
         <div className="flex-1 pr-4">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-green-600 mb-0.5">{t("income")}</p>
-          {todayStats ? (
-            <p className="text-lg font-bold text-green-600">{formatCurrency(Number(todayStats.today_income), currency)}</p>
-          ) : (
-            <Skeleton className="h-6 w-20 mt-0.5" />
-          )}
+          <p className="text-lg font-bold text-green-600">{formatCurrency(Number(today_income), currency)}</p>
         </div>
         <div className="flex-1 pl-4">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-destructive mb-0.5">{t("expenses")}</p>
-          {todayStats ? (
-            <p className="text-lg font-bold text-destructive">{formatCurrency(Number(todayStats.today_expenses), currency)}</p>
-          ) : (
-            <Skeleton className="h-6 w-20 mt-0.5" />
-          )}
+          <p className="text-lg font-bold text-destructive">{formatCurrency(Number(today_expenses), currency)}</p>
         </div>
       </CardContent>
     </Card>
@@ -157,11 +157,10 @@ function periodLabel(dateRange: DateRangeValue | null): string {
 interface FinanceStatCardsProps {
   kpis: FinanceKPIs | undefined;
   periodStats: FinancePeriodStats | undefined;
-  todayStats: FinanceTodayStats | undefined;
   dateRange: DateRangeValue | null;
 }
 
-export function FinanceStatCards({ kpis, periodStats, todayStats, dateRange }: FinanceStatCardsProps) {
+export function FinanceStatCards({ kpis, periodStats, dateRange }: FinanceStatCardsProps) {
   const t = useTranslations("Finance.statCards");
   const commonT = useTranslations("Common");
   const currency = commonT("currency");
@@ -171,13 +170,13 @@ export function FinanceStatCards({ kpis, periodStats, todayStats, dateRange }: F
 
   // ── Monthly section ───────────────────────────────────────────────────────
   const monthlySection = kpis ? (() => {
-    const revenue   = Number(kpis.monthly_revenue);
-    const prevRev   = Number(kpis.prev_month_revenue);
-    const expenses  = Number(kpis.monthly_expenses);
-    const prevExp   = Number(kpis.prev_month_expenses);
+    const revenue = Number(kpis.monthly_revenue);
+    const prevRev = Number(kpis.prev_month_revenue);
+    const expenses = Number(kpis.monthly_expenses);
+    const prevExp = Number(kpis.prev_month_expenses);
     const outstanding = Number(kpis.total_outstanding);
-    const netProfit   = revenue - expenses;
-    const prevNet     = prevRev - prevExp;
+    const netProfit = revenue - expenses;
+    const prevNet = prevRev - prevExp;
 
     return (
       <>
@@ -217,10 +216,10 @@ export function FinanceStatCards({ kpis, periodStats, todayStats, dateRange }: F
 
   // ── Period section ────────────────────────────────────────────────────────
   const periodSection = periodStats ? (() => {
-    const rev  = Number(periodStats.period_revenue);
-    const exp  = Number(periodStats.period_expenses);
-    const out  = Number(periodStats.period_outstanding);
-    const net  = rev - exp;
+    const rev = Number(periodStats.period_revenue);
+    const exp = Number(periodStats.period_expenses);
+    const out = Number(periodStats.period_outstanding);
+    const net = rev - exp;
 
     return (
       <>
@@ -263,7 +262,11 @@ export function FinanceStatCards({ kpis, periodStats, todayStats, dateRange }: F
         <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">{monthLabel}</p>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
           {monthlySection}
-          <TodayBenchCard todayStats={todayStats} currency={currency} />
+          <TodayBenchCard
+            today_expenses={kpis?.today_expenses || 0}
+            today_income={kpis?.today_income || 0}
+            currency={currency}
+          />
         </div>
       </div>
 

@@ -75,7 +75,19 @@ SELECT
     0
   )::NUMERIC(12,2) AS total_outstanding,
 
-  (SELECT COUNT(*) FROM invoices WHERE status IN ('pending', 'overdue'))::INT AS outstanding_invoice_count;
+  (SELECT COUNT(*) FROM invoices WHERE status IN ('pending', 'overdue'))::INT AS outstanding_invoice_count,
+
+          COALESCE(
+            (SELECT SUM(amount) FROM payments
+             WHERE status = 'completed' AND paid_at::DATE = CURRENT_DATE),
+            0
+          )::NUMERIC(12,2) AS today_income,
+
+          COALESCE(
+            (SELECT SUM(amount) FROM expenses
+             WHERE expense_date = CURRENT_DATE),
+            0
+          )::NUMERIC(12,2) AS today_expenses;
 
 -- ── updated_at triggers ────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION set_updated_at()

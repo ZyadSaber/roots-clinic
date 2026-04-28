@@ -5,13 +5,13 @@ import { revalidatePath } from "next/cache";
 import type {
   FinanceKPIs,
   FinancePeriodStats,
-  FinanceTodayStats,
   Invoice,
   InvoiceDetail,
   InvoiceItem,
   InvoiceFilters,
   Payment,
   InsuranceClaim,
+  InsuranceClaimDetail,
   InsuranceClaimFilters,
   InsuranceClaimStatus,
   Expense,
@@ -22,6 +22,7 @@ import type {
   CreateExpensePayload,
   CreateInsuranceClaimPayload,
   InvoiceStatus,
+  TodayPayment,
 } from "@/types/finance";
 
 // ── KPIs ───────────────────────────────────────────────────────────────────
@@ -33,25 +34,15 @@ const EMPTY_KPIS: FinanceKPIs = {
   prev_month_expenses: 0,
   total_outstanding: 0,
   outstanding_invoice_count: 0,
+  today_income: 0,
+  today_expenses: 0
 };
-
-// pg returns NUMERIC/DECIMAL columns as strings — coerce to numbers
-function parseKPIs(row: FinanceKPIs): FinanceKPIs {
-  return {
-    monthly_revenue: Number(row.monthly_revenue),
-    prev_month_revenue: Number(row.prev_month_revenue),
-    monthly_expenses: Number(row.monthly_expenses),
-    prev_month_expenses: Number(row.prev_month_expenses),
-    total_outstanding: Number(row.total_outstanding),
-    outstanding_invoice_count: Number(row.outstanding_invoice_count),
-  };
-}
 
 // Always current calendar month vs previous month — used by the top 4 cards
 export async function getFinanceStats(): Promise<FinanceKPIs> {
   try {
     const row = await queryOne<FinanceKPIs>({ sql: "SELECT * FROM finance_kpis" });
-    return row ? parseKPIs(row) : EMPTY_KPIS;
+    return row
   } catch (err) {
     console.error("getFinanceStats — finance_kpis view may not exist yet:", err);
     return EMPTY_KPIS;
@@ -106,55 +97,17 @@ export async function getFinancePeriodStats(
   }
 }
 
-// Today's income and expenses — used by the 5th split card
-export async function getTodayStats(): Promise<FinanceTodayStats> {
-  try {
-    const row = await queryOne<FinanceTodayStats>({
-      sql: `
-        SELECT
-          COALESCE(
-            (SELECT SUM(amount) FROM payments
-             WHERE status = 'completed' AND paid_at::DATE = CURRENT_DATE),
-            0
-          )::NUMERIC(12,2) AS today_income,
-
-          COALESCE(
-            (SELECT SUM(amount) FROM expenses
-             WHERE expense_date = CURRENT_DATE),
-            0
-          )::NUMERIC(12,2) AS today_expenses
-      `,
-    });
-    if (!row) return { today_income: 0, today_expenses: 0 };
-    return {
-      today_income: Number(row.today_income),
-      today_expenses: Number(row.today_expenses),
-    };
-  } catch (err) {
-    console.error("getTodayStats error:", err);
-    return { today_income: 0, today_expenses: 0 };
-  }
-}
-
 // ── Invoices ───────────────────────────────────────────────────────────────
 
 export async function getInvoices(
   filters: InvoiceFilters = {},
-): Promise<{ data: Invoice[]; total: number }> {
-  const {
-    status,
-    search,
-    dateFrom,
-    dateTo,
-    page = 1,
-    pageSize = 10,
-  } = filters;
+): Promise<Invoice[]> {
+  const { status, search, dateFrom, dateTo } = filters;
 
   const statusParam = !status || status === "all" ? null : status;
   const searchParam = search?.trim() || null;
   const dateFromParam = dateFrom || null;
   const dateToParam = dateTo || null;
-  const offset = (page - 1) * pageSize;
 
   const where = `
     WHERE ($1::invoice_status IS NULL OR i.status = $1::invoice_status)
@@ -164,37 +117,21 @@ export async function getInvoices(
       AND ($4::DATE IS NULL OR i.created_at::DATE <= $4::DATE)
   `;
 
-  const baseParams = [statusParam, searchParam, dateFromParam, dateToParam];
-
-  const [data, countRow] = await Promise.all([
-    queryMany<Invoice>({
-      sql: `
-        SELECT
-          i.id, i.invoice_number, i.patient_id,
-          p.full_name AS patient_name, p.patient_code,
-          i.visit_id, i.subtotal, i.discount, i.tax, i.total,
-          i.amount_paid, i.outstanding, i.status, i.due_date,
-          i.notes, i.created_at, i.updated_at
-        FROM invoices i
-        JOIN patients p ON p.id = i.patient_id
-        ${where}
-        ORDER BY i.created_at DESC
-        LIMIT $5 OFFSET $6
-      `,
-      params: [...baseParams, pageSize, offset],
-    }),
-    queryOne<{ count: number }>({
-      sql: `
-        SELECT COUNT(*)::INT AS count
-        FROM invoices i
-        JOIN patients p ON p.id = i.patient_id
-        ${where}
-      `,
-      params: baseParams,
-    }),
-  ]);
-
-  return { data, total: countRow?.count ?? 0 };
+  return queryMany<Invoice>({
+    sql: `
+      SELECT
+        i.id, i.invoice_number, i.patient_id,
+        p.full_name AS patient_name, p.patient_code,
+        i.visit_id, i.doctor_id, i.subtotal, i.discount, i.tax, i.total,
+        i.amount_paid, i.outstanding, i.status, i.due_date,
+        i.notes, i.created_at, i.updated_at
+      FROM invoices i
+      JOIN patients p ON p.id = i.patient_id
+      ${where}
+      ORDER BY i.created_at DESC
+    `,
+    params: [statusParam, searchParam, dateFromParam, dateToParam],
+  });
 }
 
 export async function getInvoiceDetail(
@@ -206,7 +143,7 @@ export async function getInvoiceDetail(
         SELECT
           i.id, i.invoice_number, i.patient_id,
           p.full_name AS patient_name, p.patient_code,
-          i.visit_id, i.subtotal, i.discount, i.tax, i.total,
+          i.visit_id, i.doctor_id, i.subtotal, i.discount, i.tax, i.total,
           i.amount_paid, i.outstanding, i.status, i.due_date,
           i.notes, i.created_at, i.updated_at
         FROM invoices i
@@ -517,31 +454,6 @@ export async function deleteExpense(
   }
 }
 
-// ── Insurance Claims ───────────────────────────────────────────────────────
-
-export async function getInsuranceClaims(
-  filters: InsuranceClaimFilters = {},
-): Promise<{ data: InsuranceClaim[]; total: number }> {
-  const { status, page = 1, pageSize = 10 } = filters;
-  const statusParam = !status || status === "all" ? null : status;
-  const offset = (page - 1) * pageSize;
-
-  const where = `WHERE ($1::insurance_claim_status IS NULL OR status = $1::insurance_claim_status)`;
-
-  const [data, countRow] = await Promise.all([
-    queryMany<InsuranceClaim>({
-      sql: `SELECT * FROM insurance_claims ${where} ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-      params: [statusParam, pageSize, offset],
-    }),
-    queryOne<{ count: number }>({
-      sql: `SELECT COUNT(*)::INT AS count FROM insurance_claims ${where}`,
-      params: [statusParam],
-    }),
-  ]);
-
-  return { data, total: countRow?.count ?? 0 };
-}
-
 export async function createInsuranceClaim(
   payload: CreateInsuranceClaimPayload,
 ): Promise<{ success: boolean; error?: string }> {
@@ -594,4 +506,114 @@ export async function updateInsuranceClaim(
     console.error("updateInsuranceClaim:", err);
     return { success: false, error: "Failed to update insurance claim." };
   }
+}
+
+export async function saveInsuranceClaimDocument(
+  claimId: string,
+  documentUrl: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute({
+      sql: `UPDATE insurance_claims SET document_url = $1, updated_at = NOW() WHERE id = $2`,
+      params: [documentUrl, claimId],
+    });
+    revalidatePath("/[locale]/finance", "page");
+    return { success: true };
+  } catch (err) {
+    console.error("saveInsuranceClaimDocument:", err);
+    return { success: false, error: "Failed to save document." };
+  }
+}
+
+// ── Radiology Pricing ──────────────────────────────────────────────────────
+
+export async function getRadiologyPricing(): Promise<import("@/types/finance").RadiologyPricing[]> {
+  return queryMany<import("@/types/finance").RadiologyPricing>({
+    sql: `SELECT image_type, price, updated_at FROM radiology_pricing ORDER BY image_type`,
+  });
+}
+
+export async function updateRadiologyPrice(
+  imageType: string,
+  price: number,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute({
+      sql: `
+        INSERT INTO radiology_pricing (image_type, price)
+        VALUES ($1, $2)
+        ON CONFLICT (image_type) DO UPDATE SET price = EXCLUDED.price
+      `,
+      params: [imageType, price],
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("updateRadiologyPrice:", err);
+    return { success: false, error: "Failed to update radiology price." };
+  }
+}
+
+// ── Today Bench ────────────────────────────────────────────────────────────
+
+export async function getTodayPaymentsDetail(): Promise<TodayPayment[]> {
+  try {
+    return await queryMany<TodayPayment>({
+      sql: `
+        SELECT
+          pay.id, pay.payment_ref, pay.amount, pay.method, pay.paid_at,
+          p.full_name AS patient_name, p.patient_code,
+          i.invoice_number
+        FROM payments pay
+        JOIN invoices i ON i.id = pay.invoice_id
+        JOIN patients p ON p.id = i.patient_id
+        WHERE pay.status = 'completed' AND pay.paid_at::DATE = CURRENT_DATE
+        ORDER BY pay.paid_at DESC
+      `,
+    });
+  } catch (err) {
+    console.error("getTodayPaymentsDetail:", err);
+    return [];
+  }
+}
+
+export async function getTodayExpensesDetail(): Promise<Expense[]> {
+  try {
+    return await queryMany<Expense>({
+      sql: `SELECT * FROM expenses WHERE expense_date = CURRENT_DATE ORDER BY created_at DESC`,
+    });
+  } catch (err) {
+    console.error("getTodayExpensesDetail:", err);
+    return [];
+  }
+}
+
+export async function getInsuranceClaimsWithDetails(
+  filters: InsuranceClaimFilters = {},
+): Promise<InsuranceClaimDetail[]> {
+  const { status, dateFrom, dateTo } = filters;
+
+  const statusParam = !status || status === "all" ? null : status;
+  const dateFromParam = dateFrom || null;
+  const dateToParam = dateTo || null;
+
+  const where = `
+    WHERE ($1::insurance_claim_status IS NULL OR ic.status = $1::insurance_claim_status)
+      AND ($2::DATE IS NULL OR ic.created_at::DATE >= $2::DATE)
+      AND ($3::DATE IS NULL OR ic.created_at::DATE <= $3::DATE)
+  `;
+
+  return queryMany<InsuranceClaimDetail>({
+    sql: `
+      SELECT
+        ic.*,
+        p.full_name AS patient_name, p.patient_code,
+        i.invoice_number
+      FROM insurance_claims ic
+      JOIN patients p ON p.id = ic.patient_id
+      JOIN invoices i ON i.id = ic.invoice_id
+      ${where}
+      ORDER BY ic.created_at DESC
+    `,
+    params: [statusParam, dateFromParam, dateToParam],
+  });
 }

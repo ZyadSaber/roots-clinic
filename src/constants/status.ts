@@ -1,3 +1,5 @@
+import type { InsuranceClaimStatus } from "@/types/finance";
+
 export const DOCTOR_STATUSES = [
   {
     value: "available",
@@ -25,3 +27,12 @@ export const DOCTOR_STATUSES = [
     ar: "خارج العمل",
   },
 ];
+
+export const statusColors: Record<InsuranceClaimStatus, string> = {
+  pending: "bg-chart-5/20 text-chart-5",
+  submitted: "bg-blue-500/20 text-blue-500",
+  approved: "bg-primary/20 text-primary",
+  partial: "bg-orange-500/20 text-orange-500",
+  rejected: "bg-destructive/20 text-destructive",
+};
+

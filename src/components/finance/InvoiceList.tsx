@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { FileText, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, MoreHorizontal, ChevronsRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -33,31 +34,34 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-EG", { year: "numeric", month: "short", day: "numeric" });
 }
 
+// Valid manual status transitions (payment transitions are handled automatically by recordPayment)
+const NEXT_STATUSES: Partial<Record<InvoiceStatus, InvoiceStatus[]>> = {
+  draft:    ["pending", "cancelled"],
+  pending:  ["overdue", "cancelled"],
+  partial:  ["overdue", "cancelled"],
+  overdue:  ["cancelled"],
+};
+
 interface Props {
   invoices: Invoice[];
-  total: number;
   filters: InvoiceFilters;
   onFilterChange: (f: Partial<InvoiceFilters>) => void;
   onViewDetails: (invoice: Invoice) => void;
   onRecordPayment: (invoice: Invoice) => void;
   onCreateClaim: (invoice: Invoice) => void;
-  onUpdateStatus: (invoice: Invoice) => void;
+  onUpdateStatus: (invoice: Invoice, status: InvoiceStatus) => void;
   onNewInvoice: () => void;
   isLoading: boolean;
 }
 
 export function InvoiceList({
-  invoices, total, filters, onFilterChange,
+  invoices, filters, onFilterChange,
   onViewDetails, onRecordPayment, onCreateClaim, onUpdateStatus,
   onNewInvoice, isLoading,
 }: Props) {
   const t = useTranslations("Finance.invoices");
   const commonT = useTranslations("Common");
   const currency = commonT("currency");
-
-  const pageSize = filters.pageSize ?? 10;
-  const page = filters.page ?? 1;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const statusOptions = [
     { value: "all", label: t("statuses.all") },
@@ -70,7 +74,7 @@ export function InvoiceList({
   ];
 
   const handleStatusChange = useCallback(
-    (val: string) => onFilterChange({ status: val as InvoiceFilters["status"], page: 1 }),
+    (val: string) => onFilterChange({ status: val as InvoiceFilters["status"] }),
     [onFilterChange],
   );
 
@@ -157,7 +161,28 @@ export function InvoiceList({
                         {inv.status !== "paid" && inv.status !== "cancelled" && (
                           <DropdownMenuItem onClick={() => onRecordPayment(inv)}>{t("recordPayment")}</DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => onUpdateStatus(inv)}>{t("updateStatus")}</DropdownMenuItem>
+                        {NEXT_STATUSES[inv.status] && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <ChevronsRight className="h-3.5 w-3.5 mr-2 opacity-50" />
+                                {t("updateStatus")}
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                {NEXT_STATUSES[inv.status]!.map((s) => (
+                                  <DropdownMenuItem
+                                    key={s}
+                                    onClick={() => onUpdateStatus(inv, s)}
+                                  >
+                                    {t(`statuses.${s}`)}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
                         <DropdownMenuItem onClick={() => onCreateClaim(inv)}>{t("createClaim")}</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -169,27 +194,6 @@ export function InvoiceList({
         </Table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Showing {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, total)} of {total}</span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline" size="icon" className="h-8 w-8"
-              disabled={page <= 1}
-              onClick={() => onFilterChange({ page: page - 1 })}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline" size="icon" className="h-8 w-8"
-              disabled={page >= totalPages}
-              onClick={() => onFilterChange({ page: page + 1 })}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

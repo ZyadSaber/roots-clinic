@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ZodSchema } from "zod";
 import updateDeep from "@/lib/updateDeep";
+import { DateRangeValue } from "@/components/ui/DateRangePicker";
 
 interface UseFormManagerProps<T> {
   initialData: T;
@@ -60,7 +61,7 @@ const useFormManager = <T extends object>({
     setErrors({});
   };
 
-  const handleToggle = (name: string) => (value: boolean | string) => {
+  const handleToggle = (name: string) => (value: boolean | string|DateRangeValue) => {
     setFormData((prev) => ({ ...prev, [name]: value }) as T);
   };
 

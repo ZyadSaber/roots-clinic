@@ -25,6 +25,7 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   expense?: Expense | null;
+  onSuccess?: () => void;
 }
 
 const initialData = {
@@ -37,7 +38,7 @@ const initialData = {
   expense_date: new Date().toISOString().slice(0, 10),
 };
 
-export function ExpenseDialog({ open, onOpenChange, expense }: Props) {
+export function ExpenseDialog({ open, onOpenChange, expense, onSuccess }: Props) {
   const t = useTranslations("Finance.expenses.form");
   const commonT = useTranslations("Common");
   const queryClient = useQueryClient();
@@ -94,7 +95,10 @@ export function ExpenseDialog({ open, onOpenChange, expense }: Props) {
         toast.success(commonT("success"));
         queryClient.invalidateQueries({ queryKey: ["expenses"] });
         queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
+        onSuccess?.();
         handleClose();
+        queryClient.invalidateQueries({ queryKey: ["today-expenses-detail"] });
+        queryClient.invalidateQueries({ queryKey: ["finance-today-stats"] });
       } else {
         toast.error(res.error ?? commonT("error"));
       }

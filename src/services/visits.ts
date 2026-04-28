@@ -1,6 +1,7 @@
 "use server";
 
-import { queryOne, queryMany, execute } from "@/lib/pg";
+import { queryOne, queryMany, execute, executeTransaction } from "@/lib/pg";
+import { revalidatePath } from "next/cache";
 import { VisitRecord, RadiologyAsset } from "@/types/patients";
 import { VisitRecordRow, VisitRecordStats } from "@/types/records";
 
@@ -152,6 +153,153 @@ export async function updateVisitRecord(
     return { success: true };
   } catch (error) {
     console.error("Error updating visit record:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Database error",
+    };
+  }
+}
+
+// ── Complete visit + auto-create draft invoice ─────────────────────────────
+//
+// Called when the doctor clicks "End Visit & Save". One atomic transaction:
+//   1. Saves clinical notes on the visit record
+//   2. Marks the appointment as completed
+//   3. Idempotency — skips invoice creation if one already exists for this visit
+//   4. Creates a draft invoice linked to visit + patient + doctor
+//   5. Adds a consultation line item at the doctor's configured fee
+//   6. Groups radiology assets by image_type, looks up price from radiology_pricing,
+//      and adds one line item per type (quantity = count of that type taken)
+//   7. Recalculates invoice subtotal and total from the inserted items
+//
+// Inventory items used during the procedure will be added here in a future pass.
+//
+export interface CompleteVisitPayload {
+  visitId: string;
+  appointmentId: string;
+  patientId: string;
+  doctorId: string | null;
+  procedureType: string;
+  formData: VisitUpdatePayload;
+  createdBy?: string;
+}
+
+export async function completeVisitWithInvoice(
+  payload: CompleteVisitPayload,
+): Promise<{ success: boolean; invoiceId?: string; error?: string }> {
+  try {
+    let invoiceId: string | undefined;
+
+    await executeTransaction(async (client) => {
+      // 1. Save clinical notes
+      await client.query(
+        `UPDATE visit_records SET
+           diagnosis       = COALESCE($1, diagnosis),
+           procedure_done  = COALESCE($2, procedure_done),
+           procedure_notes = COALESCE($3, procedure_notes),
+           prescription    = COALESCE($4, prescription),
+           follow_up_date  = $5
+         WHERE id = $6`,
+        [
+          payload.formData.diagnosis ?? null,
+          payload.formData.procedure_done ?? null,
+          payload.formData.procedure_notes ?? null,
+          payload.formData.prescription ?? null,
+          payload.formData.follow_up_date ?? null,
+          payload.visitId,
+        ],
+      );
+
+      // 2. Mark appointment completed
+      await client.query(
+        `UPDATE appointments SET
+           status       = 'completed'::appointment_status,
+           completed_at = COALESCE(completed_at, NOW())
+         WHERE id = $1`,
+        [payload.appointmentId],
+      );
+
+      // 3. Idempotency — skip if invoice already exists for this visit
+      const existing = await client.query<{ id: string }>(
+        `SELECT id FROM invoices WHERE visit_id = $1 LIMIT 1`,
+        [payload.visitId],
+      );
+      if (existing.rows.length > 0) {
+        invoiceId = existing.rows[0].id;
+        return;
+      }
+
+      // 4. Fetch doctor's consultation fee
+      let consultationFee = 0;
+      if (payload.doctorId) {
+        const docRow = await client.query<{ consultation_fee: string }>(
+          `SELECT consultation_fee FROM doctors WHERE id = $1`,
+          [payload.doctorId],
+        );
+        consultationFee = docRow.rows[0] ? Number(docRow.rows[0].consultation_fee) : 0;
+      }
+
+      // 5. Fetch radiology assets + pricing, grouped by image type
+      //    LEFT JOIN so we get 0 price if the clinic hasn't configured pricing yet
+      const radRows = await client.query<{ image_type: string; price: string; count: string }>(
+        `SELECT
+           ra.image_type,
+           COALESCE(rp.price, 0) AS price,
+           COUNT(*)              AS count
+         FROM radiology_assets ra
+         LEFT JOIN radiology_pricing rp ON rp.image_type = ra.image_type
+         WHERE ra.visit_id = $1
+         GROUP BY ra.image_type, rp.price
+         ORDER BY ra.image_type`,
+        [payload.visitId],
+      );
+
+      // 6. Create draft invoice with doctor_id for easy filtering in Finance
+      const invoiceRow = await client.query<{ id: string }>(
+        `INSERT INTO invoices
+           (patient_id, visit_id, doctor_id, subtotal, discount, tax, total, status, created_by)
+         VALUES ($1, $2, $3, 0, 0, 0, 0, 'draft', $4)
+         RETURNING id`,
+        [payload.patientId, payload.visitId, payload.doctorId ?? null, payload.createdBy ?? null],
+      );
+      invoiceId = invoiceRow.rows[0].id;
+
+      // 7. Consultation fee line item (doctor attributed)
+      await client.query(
+        `INSERT INTO invoice_items
+           (invoice_id, doctor_id, service_name, quantity, unit_price, discount_pct, total)
+         VALUES ($1, $2, $3, 1, $4, 0, $4)`,
+        [invoiceId, payload.doctorId ?? null, payload.procedureType, consultationFee],
+      );
+
+      // 8. Radiology line items — one row per image type, quantity = count of that type
+      for (const row of radRows.rows) {
+        const qty   = Number(row.count);
+        const price = Number(row.price);
+        const total = parseFloat((qty * price).toFixed(2));
+        await client.query(
+          `INSERT INTO invoice_items
+             (invoice_id, service_name, quantity, unit_price, discount_pct, total)
+           VALUES ($1, $2, $3, $4, 0, $5)`,
+          [invoiceId, `Radiology – ${row.image_type}`, qty, price, total],
+        );
+      }
+
+      // 9. Recalculate invoice totals from the inserted items
+      await client.query(
+        `UPDATE invoices SET
+           subtotal   = (SELECT COALESCE(SUM(total), 0) FROM invoice_items WHERE invoice_id = $1),
+           total      = (SELECT COALESCE(SUM(total), 0) FROM invoice_items WHERE invoice_id = $1),
+           updated_at = NOW()
+         WHERE id = $1`,
+        [invoiceId],
+      );
+    });
+
+    revalidatePath("/[locale]/finance", "page");
+    return { success: true, invoiceId };
+  } catch (error) {
+    console.error("completeVisitWithInvoice:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Database error",

@@ -9,8 +9,7 @@ import {
     Save, ImageIcon, FileText, Pill, CalendarCheck, ClipboardList, X,
     Printer, Download, Sheet,
 } from "lucide-react"
-import { updateAppointmentStatus } from "@/services/appointments"
-import { getVisitByAppointmentId, getRadiologyByVisitId, updateVisitRecord } from "@/services/visits"
+import { getVisitByAppointmentId, getRadiologyByVisitId, updateVisitRecord, completeVisitWithInvoice } from "@/services/visits"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -106,23 +105,30 @@ export function VisitInProgressModal({
 
     const endMutation = useMutation({
         mutationFn: async () => {
-            if (visit) {
-                await updateVisitRecord(visit.id, {
+            if (!visit) return { success: false, error: "No visit loaded" }
+            return completeVisitWithInvoice({
+                visitId: visit.id,
+                appointmentId: appointment.id,
+                patientId: appointment.patient_id,
+                doctorId: appointment.doctor_id,
+                procedureType: appointment.procedure_type,
+                formData: {
                     ...formData,
                     follow_up_date: formData.follow_up_date || null,
-                })
-            }
-            return updateAppointmentStatus(appointment.id, "completed")
+                },
+            })
         },
         onSuccess: (res) => {
-            if (res.success) {
+            if (res?.success) {
                 queryClient.invalidateQueries({ queryKey: ["appointments"] })
                 queryClient.invalidateQueries({ queryKey: ["appointments-stats"] })
                 queryClient.invalidateQueries({ queryKey: ["visit", appointment.id] })
+                queryClient.invalidateQueries({ queryKey: ["invoices"] })
+                queryClient.invalidateQueries({ queryKey: ["finance-stats"] })
                 toast.success(t("toastCompleted", { name: appointment.patient_name }))
                 onEndVisit()
             } else {
-                toast.error(res.error ?? t("toastEndFailed"))
+                toast.error(res?.error ?? t("toastEndFailed"))
             }
         },
         onError: () => toast.error(t("toastError")),

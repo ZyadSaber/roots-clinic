@@ -27,6 +27,7 @@
     "signIn": "Sign In"
   },
   "Common": {
+    "date":"Date",
     "enName": "English name",
     "id": "ID",
     "arName": "Arabic name",
