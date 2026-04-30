@@ -27,7 +27,7 @@
     "signIn": "Sign In"
   },
   "Common": {
-    "date":"Date",
+    "date": "Date",
     "enName": "English name",
     "id": "ID",
     "arName": "Arabic name",
@@ -74,14 +74,14 @@
       "backToHome": "Go Back Home"
     },
     "applicationError": {
-      "title": "Something went wrong!",
-      "description": "We've encountered an unexpected error. Please try again or return home.",
-      "retry": "Try Again",
       "505": {
         "title": "505 - Server Error",
         "description": "Oops! We've encountered an unexpected error on the server.",
         "backToHome": "Return to Homepage"
-      }
+      },
+      "title": "Something went wrong!",
+      "description": "We've encountered an unexpected error. Please try again or return home.",
+      "retry": "Try Again"
     },
     "goHome": "Go Back Home",
     "errorDetails": "Error Details",
@@ -594,7 +594,9 @@
     "tabs": {
       "invoices": "Invoices",
       "expenses": "Expenses",
-      "insurance": "Insurance Claims"
+      "insurance": "Insurance Claims",
+      "purchases": "Purchases",
+      "downPayments": "Down Payments"
     },
     "invoices": {
       "title": "Invoices",
@@ -735,6 +737,110 @@
         "submit": "Submit Claim",
         "update": "Update Claim",
         "submitting": "Submitting..."
+      }
+    },
+    "purchases": {
+      "poNumber": "PO Number",
+      "supplier": "Supplier",
+      "date": "Date",
+      "status": "Status",
+      "total": "Total",
+      "actions": "Actions",
+      "noPurchases": "No purchase orders yet",
+      "noItems": "No items yet",
+      "statuses": {
+        "draft": "Draft",
+        "ordered": "Ordered",
+        "received": "Received",
+        "cancelled": "Cancelled"
+      },
+      "suppliers": "Suppliers",
+      "newOrder": "New Purchase Order",
+      "markOrdered": "Mark Ordered",
+      "receive": "Receive",
+      "receiving": "Receiving...",
+      "add": "Add",
+      "selectItem": "Select existing item (optional)",
+      "itemName": "Item name",
+      "qty": "Qty",
+      "unitPrice": "Unit price",
+      "itemAdded": "Item added",
+      "orderReceived": "Purchase order received — stock updated",
+      "markedOrdered": "Order marked as ordered"
+    },
+    "insuranceProviders": {
+      "addTitle": "Add Insurance Provider",
+      "editTitle": "Edit Provider",
+      "name": "Provider Name",
+      "namePlaceholder": "e.g. MetLife, Bupa",
+      "nameRequired": "Provider name is required",
+      "phone": "Phone",
+      "phonePlaceholder": "+20 2 xxxx xxxx",
+      "hotline": "Hotline",
+      "hotlinePlaceholder": "19xxx",
+      "contractStart": "Contract Start",
+      "contractEnd": "Contract End",
+      "representative": "Representative Person",
+      "representativePlaceholder": "Contact name",
+      "instructions": "Insurance Instructions",
+      "instructionsPlaceholder": "Coverage rules, submission requirements…",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes…",
+      "add": "Add Provider",
+      "save": "Save Changes",
+      "saving": "Saving…"
+    },
+    "downPayments": {
+      "hint": "Search a patient to view their invoices or record a deposit",
+      "searchPlaceholder": "Search patient by name or code…",
+      "change": "Change",
+      "newPayment": "New Down Payment",
+      "noPatients": "No patients found",
+      "noInvoices": "No invoices found for this patient.",
+      "noInvoicesHint": "Use New Down Payment to record a deposit.",
+      "outstandingBanner": "{count} outstanding invoice — {total} total due",
+      "outstandingBannerPlural": "{count} outstanding invoices — {total} total due",
+      "invoice": "Invoice",
+      "date": "Date",
+      "total": "Total",
+      "paid": "Paid",
+      "outstanding": "Outstanding",
+      "pay": "Pay",
+      "dialog": {
+        "newTitle": "New Down Payment",
+        "payTitle": "Record Payment",
+        "depositNote": "A draft invoice will be created automatically to track this deposit.",
+        "invoiceLabel": "Invoice",
+        "totalLabel": "Total",
+        "paidLabel": "Paid",
+        "outstandingLabel": "Outstanding",
+        "statusLabel": "Status",
+        "amount": "Amount (EGP)",
+        "method": "Payment Method",
+        "transactionRef": "Transaction Reference",
+        "notes": "Notes",
+        "notesPlaceholder": "Reason for deposit (optional)",
+        "submit": "Record Payment",
+        "submitting": "Processing...",
+        "success": "Payment recorded successfully",
+        "error": "Failed to record payment"
+      }
+    },
+    "todayBench": {
+      "expensesTitle": "Today's Expenses",
+      "incomeTitle": "Today's Income",
+      "add": "Add",
+      "loading": "Loading…",
+      "noExpenses": "No expenses recorded today",
+      "noPayments": "No payments received today",
+      "lastPayment": "Last payment at {time}",
+      "columns": {
+        "title": "Title",
+        "category": "Category",
+        "amount": "Amount",
+        "patient": "Patient",
+        "invoice": "Invoice",
+        "method": "Method"
       }
     }
   }

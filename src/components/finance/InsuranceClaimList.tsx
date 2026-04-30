@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronsRight, MoreHorizontal, Paperclip, Upload } from "lucide-react";
+import { ChevronsRight, MoreHorizontal, Paperclip, ShieldCheck, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SelectField } from "@/components/ui/select";
 import type { InsuranceClaimDetail, InsuranceClaimFilters, InsuranceClaimStatus } from "@/types/finance";
-import { getInsuranceClaimsWithDetails, updateInsuranceClaim, saveInsuranceClaimDocument } from "@/services/finance";
+import { getInsuranceClaimsWithDetails, getInsuranceProviders, updateInsuranceClaim, saveInsuranceClaimDocument } from "@/services/finance";
+import { InsuranceProvidersDialog } from "./InsuranceProvidersDialog";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import isArrayHasData from "@/lib/isArrayHasData";
@@ -53,6 +54,8 @@ export function InsuranceClaimList() {
   const [partialClaim, setPartialClaim] = useState<InsuranceClaimDetail | null>(null);
   const [approvedAmount, setApprovedAmount] = useState(0);
 
+  const [providersOpen, setProvidersOpen] = useState(false);
+
   // upload state
   const [uploadingClaimId, setUploadingClaimId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +66,12 @@ export function InsuranceClaimList() {
   const { data: claimsData, isLoading } = useQuery({
     queryKey: ["insurance-claims", filters],
     queryFn: () => getInsuranceClaimsWithDetails(filters),
+    staleTime: 60_000,
+  });
+
+  const { data: providers = [] } = useQuery({
+    queryKey: ["insurance-providers"],
+    queryFn: getInsuranceProviders,
     staleTime: 60_000,
   });
 
@@ -191,14 +200,21 @@ export function InsuranceClaimList() {
       />
 
       <div className="flex items-center justify-between">
-        <SelectField
-          options={statusOptions}
-          label={commonT("status")}
-          onValueChange={setStatus}
-          value={status}
-          name=""
-          containerClassName="w-[15%]"
-        />
+        <div className="flex items-center gap-3">
+          <SelectField
+            options={statusOptions}
+            label={commonT("status")}
+            onValueChange={setStatus}
+            value={status}
+            name=""
+            containerClassName="w-[180px]"
+            hideClear
+          />
+          <Button variant="outline" size="sm" onClick={() => setProvidersOpen(true)} className="gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Providers
+          </Button>
+        </div>
         <span className="text-sm text-muted-foreground">{total} claim{total !== 1 ? "s" : ""}</span>
       </div>
 
@@ -309,6 +325,12 @@ export function InsuranceClaimList() {
           </Table>
         </div>
       </LoadingOverlay>
+
+      <InsuranceProvidersDialog
+        isOpen={providersOpen}
+        onClose={setProvidersOpen}
+        providers={providers}
+      />
 
       {/* Partial approved amount dialog */}
       <Dialog open={!!partialClaim} onOpenChange={(v) => !v && setPartialClaim(null)}>

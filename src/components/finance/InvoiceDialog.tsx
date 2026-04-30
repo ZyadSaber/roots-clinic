@@ -163,18 +163,60 @@ function InvoiceDetailView({ invoiceId, currency }: { invoiceId: string; currenc
           <div>
             <p className="text-sm font-medium mb-2">Insurance Claims</p>
             <div className="space-y-2">
-              {detail.insurance_claims.map((c) => (
-                <div key={c.id} className="flex items-center justify-between text-sm rounded border p-2 bg-muted/30">
-                  <div>
-                    <span className="font-medium">{c.provider}</span>
-                    {c.policy_number && <span className="ml-2 text-xs text-muted-foreground">{c.policy_number}</span>}
+              {detail.insurance_claims.map((c) => {
+                const claimStatusColors: Record<string, string> = {
+                  pending:   "bg-yellow-500/20 text-yellow-700",
+                  submitted: "bg-blue-500/20 text-blue-700",
+                  approved:  "bg-primary/20 text-primary",
+                  partial:   "bg-orange-500/20 text-orange-700",
+                  rejected:  "bg-destructive/20 text-destructive",
+                };
+                return (
+                  <div key={c.id} className="rounded border bg-muted/30 p-3 text-sm space-y-2">
+                    {/* Top row: provider + status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <span className="font-medium">{c.provider}</span>
+                        {c.policy_number && (
+                          <span className="ml-2 font-mono text-xs text-muted-foreground">{c.policy_number}</span>
+                        )}
+                      </div>
+                      <Badge className={`text-xs border-none shrink-0 ${claimStatusColors[c.status] ?? ""}`}>
+                        {c.status}
+                      </Badge>
+                    </div>
+
+                    {/* Amounts */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                      <span className="text-muted-foreground">Claimed</span>
+                      <span className="font-medium">{formatCurrency(c.claimed_amount, currency)}</span>
+                      {c.approved_amount > 0 && (
+                        <>
+                          <span className="text-muted-foreground">Approved</span>
+                          <span className="font-medium text-primary">{formatCurrency(c.approved_amount, currency)}</span>
+                        </>
+                      )}
+                      {c.submitted_at && (
+                        <>
+                          <span className="text-muted-foreground">Submitted</span>
+                          <span>{formatDate(c.submitted_at)}</span>
+                        </>
+                      )}
+                      {c.resolved_at && (
+                        <>
+                          <span className="text-muted-foreground">Resolved</span>
+                          <span>{formatDate(c.resolved_at)}</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Notes */}
+                    {c.notes && (
+                      <p className="text-xs text-muted-foreground border-t pt-2">{c.notes}</p>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className="text-xs border-none capitalize">{c.status}</Badge>
-                    <span className="text-sm">{formatCurrency(c.claimed_amount, currency)}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

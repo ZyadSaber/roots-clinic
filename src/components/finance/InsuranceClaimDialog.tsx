@@ -2,10 +2,10 @@
 
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useFormManager } from "@/hooks";
-import { createInsuranceClaim, updateInsuranceClaim } from "@/services/finance";
+import { createInsuranceClaim, getInsuranceProviders, updateInsuranceClaim } from "@/services/finance";
 import type { Invoice, InsuranceClaim, InsuranceClaimStatus } from "@/types/finance";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -32,9 +32,16 @@ export function InsuranceClaimDialog({ open, onOpenChange, invoice, claim }: Pro
   const queryClient = useQueryClient();
   const isUpdateMode = !!claim;
 
+  const { data: insuranceProviders = [] } = useQuery({
+    queryKey: ["insurance-providers"],
+    queryFn: getInsuranceProviders,
+    staleTime: 60_000,
+  });
+
   const { formData, handleFieldChange, setFormData, errors, setErrors, resetForm } = useFormManager({
     initialData: {
       provider: "",
+      insurance_provider_id: "",
       policy_number: "",
       claimed_amount: invoice?.total ?? 0,
       notes: "",
@@ -48,6 +55,7 @@ export function InsuranceClaimDialog({ open, onOpenChange, invoice, claim }: Pro
     const newErrors: Record<string, string> = {};
     if (!formData.provider.trim()) newErrors.provider = "Provider is required";
     if (formData.claimed_amount <= 0) newErrors.claimed_amount = "Amount must be greater than 0";
+    if (invoice && formData.claimed_amount > invoice.total) newErrors.claimed_amount = `Cannot exceed invoice total (${invoice.total} EGP)`;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -56,6 +64,7 @@ export function InsuranceClaimDialog({ open, onOpenChange, invoice, claim }: Pro
     if (claim) {
       setFormData({
         provider: claim.provider,
+        insurance_provider_id: "",
         policy_number: claim.policy_number ?? "",
         claimed_amount: claim.claimed_amount,
         notes: claim.notes ?? "",
@@ -87,6 +96,7 @@ export function InsuranceClaimDialog({ open, onOpenChange, invoice, claim }: Pro
         policy_number: formData.policy_number || undefined,
         claimed_amount: formData.claimed_amount,
         notes: formData.notes || undefined,
+        insurance_provider_id: formData.insurance_provider_id || undefined,
       });
     },
     onSuccess: (res) => {
@@ -141,11 +151,33 @@ export function InsuranceClaimDialog({ open, onOpenChange, invoice, claim }: Pro
             <>
               <div className="space-y-1">
                 <Label>{t("provider")}</Label>
-                <Input
-                  value={formData.provider}
-                  onChange={(e) => handleFieldChange({ name: "provider", value: e.target.value })}
-                  placeholder="e.g. MetLife, Bupa"
-                />
+                {insuranceProviders.length > 0 ? (
+                  <Select
+                    value={formData.insurance_provider_id}
+                    onValueChange={(id) => {
+                      const p = insuranceProviders.find((x) => x.id === id);
+                      if (p) {
+                        handleFieldChange({ name: "insurance_provider_id", value: id });
+                        handleFieldChange({ name: "provider", value: p.name });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a provider…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {insuranceProviders.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={formData.provider}
+                    onChange={(e) => handleFieldChange({ name: "provider", value: e.target.value })}
+                    placeholder="e.g. MetLife, Bupa"
+                  />
+                )}
                 {errors.provider && <p className="text-xs text-destructive">{errors.provider}</p>}
               </div>
 
@@ -162,6 +194,7 @@ export function InsuranceClaimDialog({ open, onOpenChange, invoice, claim }: Pro
                   <Label>{t("claimedAmount")}</Label>
                   <Input
                     type="number" min={0.01} step={0.01}
+                    max={invoice?.total}
                     value={formData.claimed_amount}
                     onChange={(e) => handleFieldChange({ name: "claimed_amount", value: parseFloat(e.target.value) || 0 })}
                   />

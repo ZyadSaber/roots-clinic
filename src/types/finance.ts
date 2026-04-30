@@ -35,6 +35,8 @@ export interface Invoice {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  has_active_claim: boolean;
+  claims_count: number;
 }
 
 export interface RadiologyPricing {
@@ -110,7 +112,6 @@ export interface Expense {
 
 export interface InvoiceFilters {
   status?: InvoiceStatus | 'all';
-  search?: string;
   dateFrom?: string;
   dateTo?: string;
 }
@@ -177,6 +178,31 @@ export interface FinancePeriodStats {
   period_outstanding_count: number;
 }
 
+export interface InsuranceProvider {
+  id: string;
+  name: string;
+  phone: string | null;
+  hotline: string | null;
+  date_from: string | null;
+  date_to: string | null;
+  representative_person: string | null;
+  notes: string | null;
+  insurance_instructions: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateInsuranceProviderPayload {
+  name: string;
+  phone?: string;
+  hotline?: string;
+  date_from?: string;
+  date_to?: string;
+  representative_person?: string;
+  notes?: string;
+  insurance_instructions?: string;
+}
+
 export interface CreateInsuranceClaimPayload {
   invoice_id: string;
   patient_id: string;
@@ -184,12 +210,23 @@ export interface CreateInsuranceClaimPayload {
   policy_number?: string;
   claimed_amount: number;
   notes?: string;
+  insurance_provider_id?: string;
 }
 
 export interface InsuranceClaimDetail extends InsuranceClaim {
   patient_name: string;
   patient_code: string;
   invoice_number: string;
+}
+
+export interface RecordDownPaymentPayload {
+  patient_id: string;
+  amount: number;
+  method: PaymentMethod;
+  transaction_ref?: string;
+  notes?: string;
+  received_by?: string;
+  invoice_id?: string;
 }
 
 export interface TodayPayment {

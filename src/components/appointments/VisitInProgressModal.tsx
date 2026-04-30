@@ -7,9 +7,11 @@ import { format } from "date-fns"
 import {
     Stethoscope, User, Clock, ScanLine, CheckCircle,
     Save, ImageIcon, FileText, Pill, CalendarCheck, ClipboardList, X,
-    Printer, Download, Sheet,
+    Printer, Download, Sheet, Package, Plus, ChevronDown, ChevronRight,
 } from "lucide-react"
 import { getVisitByAppointmentId, getRadiologyByVisitId, updateVisitRecord, completeVisitWithInvoice } from "@/services/visits"
+import { getInventoryItems, useInventoryItem } from "@/services/inventory"
+import type { InventoryItem } from "@/types/inventory"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -53,6 +55,47 @@ export function VisitInProgressModal({
     const { formData, handleChange, setFormData } = useFormManager({ initialData: FORM_DEFAULTS })
 
     const [sendingRadiology, setSendingRadiology] = useState(false)
+
+    // ── Items used state ──
+    const [itemsExpanded, setItemsExpanded] = useState(false)
+    const [selectedItemId, setSelectedItemId] = useState("")
+    const [usageQty, setUsageQty] = useState(1)
+    const [usedItems, setUsedItems] = useState<Array<{ name: string; qty: number }>>([])
+
+    const { data: inventoryItems = [] } = useQuery({
+        queryKey: ["inventory-items"],
+        queryFn: () => getInventoryItems(),
+        staleTime: 60_000,
+        enabled: open && !readOnly,
+    })
+
+    const { mutate: recordUsage, isPending: recordingUsage } = useMutation({
+        mutationFn: async () => {
+            if (!visit?.id || !selectedItemId) throw new Error("No visit or item")
+            // invoice_id is not yet known — it's created at end-visit.
+            // The movement is recorded with visit_id only; completeVisitWithInvoice
+            // backfills invoice_id and adds it as a line item when the visit ends.
+            return useInventoryItem({
+                item_id: selectedItemId,
+                visit_id: visit.id,
+                quantity: usageQty,
+            })
+        },
+        onSuccess: (res) => {
+            if (res?.success) {
+                const item = inventoryItems.find((i) => i.id === selectedItemId)
+                if (item) setUsedItems((prev) => [...prev, { name: item.name, qty: usageQty }])
+                setSelectedItemId("")
+                setUsageQty(1)
+                queryClient.invalidateQueries({ queryKey: ["inventory-items"] })
+                queryClient.invalidateQueries({ queryKey: ["inventory-kpis"] })
+                toast.success("Item recorded")
+            } else {
+                toast.error(res?.error ?? "Failed to record item usage")
+            }
+        },
+        onError: () => toast.error("Failed to record item usage"),
+    })
 
     // ── Lightbox state ──
     const { visible: lightboxOpen, handleOpen: openLightbox, handleClose: closeLightbox } = useVisibility()
@@ -356,6 +399,76 @@ export function VisitInProgressModal({
                                                 {t("saveNotes")}
                                             </Button>
                                         )}
+
+                                        {/* ── Items Used ── */}
+                                        {!readOnly && visit?.id && (
+                                            <div className="rounded-xl border border-border/40 overflow-hidden">
+                                                <button
+                                                    type="button"
+                                                    className="w-full flex items-center gap-2 px-3 py-2 bg-secondary/30 text-sm font-bold hover:bg-secondary/50 transition-colors"
+                                                    onClick={() => setItemsExpanded(!itemsExpanded)}
+                                                >
+                                                    {itemsExpanded
+                                                        ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                                        : <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                                    }
+                                                    <Package className="w-3.5 h-3.5 text-primary" />
+                                                    Items Used
+                                                    {usedItems.length > 0 && (
+                                                        <span className="ms-auto text-xs font-black text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                                                            {usedItems.length}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                                {itemsExpanded && (
+                                                    <div className="px-3 py-3 space-y-3">
+                                                        <div className="flex gap-2">
+                                                            <select
+                                                                className="flex-1 h-8 rounded-lg border border-border/50 bg-background text-sm px-2 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                                                value={selectedItemId}
+                                                                onChange={(e) => setSelectedItemId(e.target.value)}
+                                                            >
+                                                                <option value="">Select item...</option>
+                                                                {inventoryItems.map((i: InventoryItem) => (
+                                                                    <option key={i.id} value={i.id} disabled={i.status === "out_of_stock"}>
+                                                                        {i.name} ({i.current_stock} {i.unit ?? ""})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            <input
+                                                                type="number"
+                                                                min={1}
+                                                                value={usageQty}
+                                                                onChange={(e) => setUsageQty(Number(e.target.value))}
+                                                                className="w-16 h-8 rounded-lg border border-border/50 bg-background text-sm px-2 text-center focus:outline-none focus:ring-1 focus:ring-primary/30"
+                                                            />
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-8 gap-1 rounded-lg"
+                                                                disabled={!selectedItemId || recordingUsage}
+                                                                onClick={() => recordUsage()}
+                                                            >
+                                                                {recordingUsage
+                                                                    ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                                                    : <Plus className="w-3.5 h-3.5" />
+                                                                }
+                                                            </Button>
+                                                        </div>
+                                                        {usedItems.length > 0 && (
+                                                            <ul className="space-y-1">
+                                                                {usedItems.map((u, idx) => (
+                                                                    <li key={idx} className="flex justify-between text-xs text-muted-foreground border-t border-border/30 pt-1">
+                                                                        <span>{u.name}</span>
+                                                                        <span className="font-medium">×{u.qty}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
                                     </>
                                 </div>
                             </LoadingOverlay>

@@ -14,11 +14,14 @@ import type {
   InsuranceClaimDetail,
   InsuranceClaimFilters,
   InsuranceClaimStatus,
+  InsuranceProvider,
+  CreateInsuranceProviderPayload,
   Expense,
   ExpenseFilters,
   CreateInvoicePayload,
   AddInvoiceItemPayload,
   RecordPaymentPayload,
+  RecordDownPaymentPayload,
   CreateExpensePayload,
   CreateInsuranceClaimPayload,
   InvoiceStatus,
@@ -102,19 +105,16 @@ export async function getFinancePeriodStats(
 export async function getInvoices(
   filters: InvoiceFilters = {},
 ): Promise<Invoice[]> {
-  const { status, search, dateFrom, dateTo } = filters;
+  const { status, dateFrom, dateTo } = filters;
 
   const statusParam = !status || status === "all" ? null : status;
-  const searchParam = search?.trim() || null;
   const dateFromParam = dateFrom || null;
   const dateToParam = dateTo || null;
 
   const where = `
     WHERE ($1::invoice_status IS NULL OR i.status = $1::invoice_status)
-      AND ($2::TEXT IS NULL OR p.full_name ILIKE '%' || $2 || '%'
-                            OR i.invoice_number ILIKE '%' || $2 || '%')
-      AND ($3::DATE IS NULL OR i.created_at::DATE >= $3::DATE)
-      AND ($4::DATE IS NULL OR i.created_at::DATE <= $4::DATE)
+      AND ($2::DATE IS NULL OR i.created_at::DATE >= $2::DATE)
+      AND ($3::DATE IS NULL OR i.created_at::DATE <= $3::DATE)
   `;
 
   return queryMany<Invoice>({
@@ -124,14 +124,20 @@ export async function getInvoices(
         p.full_name AS patient_name, p.patient_code,
         i.visit_id, i.doctor_id, i.subtotal, i.discount, i.tax, i.total,
         i.amount_paid, i.outstanding, i.status, i.due_date,
-        i.notes, i.created_at, i.updated_at
+        i.notes, i.created_at, i.updated_at,
+        EXISTS (
+          SELECT 1 FROM insurance_claims ic
+          WHERE ic.invoice_id = i.id
+            AND ic.status NOT IN ('rejected')
+        ) AS has_active_claim,
+        (SELECT COUNT(*) FROM insurance_claims ic WHERE ic.invoice_id = i.id)::INT AS claims_count
       FROM invoices i
       JOIN patients p ON p.id = i.patient_id
       ${where}
       ORDER BY i.created_at DESC
     `,
-    params: [statusParam, searchParam, dateFromParam, dateToParam],
-  });
+    params: [statusParam, dateFromParam, dateToParam],
+  }) || [];
 }
 
 export async function getInvoiceDetail(
@@ -145,7 +151,12 @@ export async function getInvoiceDetail(
           p.full_name AS patient_name, p.patient_code,
           i.visit_id, i.doctor_id, i.subtotal, i.discount, i.tax, i.total,
           i.amount_paid, i.outstanding, i.status, i.due_date,
-          i.notes, i.created_at, i.updated_at
+          i.notes, i.created_at, i.updated_at,
+          EXISTS (
+            SELECT 1 FROM insurance_claims ic
+            WHERE ic.invoice_id = i.id
+              AND ic.status NOT IN ('rejected')
+          ) AS has_active_claim
         FROM invoices i
         JOIN patients p ON p.id = i.patient_id
         WHERE i.id = $1
@@ -461,8 +472,8 @@ export async function createInsuranceClaim(
     await execute({
       sql: `
         INSERT INTO insurance_claims
-          (invoice_id, patient_id, provider, policy_number, claimed_amount, notes)
-        VALUES ($1, $2, $3, $4, $5, $6)
+          (invoice_id, patient_id, provider, policy_number, claimed_amount, notes, insurance_provider_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
       `,
       params: [
         payload.invoice_id,
@@ -471,6 +482,7 @@ export async function createInsuranceClaim(
         payload.policy_number || null,
         payload.claimed_amount,
         payload.notes || null,
+        payload.insurance_provider_id || null,
       ],
     });
     revalidatePath("/[locale]/finance", "page");
@@ -478,6 +490,97 @@ export async function createInsuranceClaim(
   } catch (err) {
     console.error("createInsuranceClaim:", err);
     return { success: false, error: "Failed to create insurance claim." };
+  }
+}
+
+// ── Insurance Providers ────────────────────────────────────────────────────
+
+export async function getInsuranceProviders(): Promise<InsuranceProvider[]> {
+  try {
+    return await queryMany<InsuranceProvider>({
+      sql: `SELECT * FROM insurance_providers ORDER BY name ASC`,
+    });
+  } catch (err) {
+    console.error("getInsuranceProviders:", err);
+    return [];
+  }
+}
+
+export async function createInsuranceProvider(
+  payload: CreateInsuranceProviderPayload,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute({
+      sql: `
+        INSERT INTO insurance_providers
+          (name, phone, hotline, date_from, date_to, representative_person, notes, insurance_instructions)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `,
+      params: [
+        payload.name,
+        payload.phone || null,
+        payload.hotline || null,
+        payload.date_from || null,
+        payload.date_to || null,
+        payload.representative_person || null,
+        payload.notes || null,
+        payload.insurance_instructions || null,
+      ],
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("createInsuranceProvider:", err);
+    return { success: false, error: "Failed to create insurance provider." };
+  }
+}
+
+export async function updateInsuranceProvider(
+  id: string,
+  payload: Partial<CreateInsuranceProviderPayload>,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute({
+      sql: `
+        UPDATE insurance_providers SET
+          name                   = COALESCE($1, name),
+          phone                  = $2,
+          hotline                = $3,
+          date_from              = $4,
+          date_to                = $5,
+          representative_person  = $6,
+          notes                  = $7,
+          insurance_instructions = $8,
+          updated_at             = NOW()
+        WHERE id = $9
+      `,
+      params: [
+        payload.name ?? null,
+        payload.phone ?? null,
+        payload.hotline ?? null,
+        payload.date_from ?? null,
+        payload.date_to ?? null,
+        payload.representative_person ?? null,
+        payload.notes ?? null,
+        payload.insurance_instructions ?? null,
+        id,
+      ],
+    });
+    return { success: true };
+  } catch (err) {
+    console.error("updateInsuranceProvider:", err);
+    return { success: false, error: "Failed to update insurance provider." };
+  }
+}
+
+export async function deleteInsuranceProvider(
+  id: string,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await execute({ sql: `DELETE FROM insurance_providers WHERE id = $1`, params: [id] });
+    return { success: true };
+  } catch (err) {
+    console.error("deleteInsuranceProvider:", err);
+    return { success: false, error: "Failed to delete insurance provider." };
   }
 }
 
@@ -616,4 +719,99 @@ export async function getInsuranceClaimsWithDetails(
     `,
     params: [statusParam, dateFromParam, dateToParam],
   });
+}
+
+// ── Down Payments ──────────────────────────────────────────────────────────
+
+export async function getPatientInvoices(patientId: string): Promise<Invoice[]> {
+  try {
+    return await queryMany<Invoice>({
+      sql: `
+        SELECT
+          i.id, i.invoice_number, i.patient_id,
+          p.full_name AS patient_name, p.patient_code,
+          i.visit_id, i.doctor_id, i.subtotal, i.discount, i.tax, i.total,
+          i.amount_paid, i.outstanding, i.status, i.due_date,
+          i.notes, i.created_at, i.updated_at,
+          EXISTS (
+            SELECT 1 FROM insurance_claims ic
+            WHERE ic.invoice_id = i.id
+              AND ic.status NOT IN ('rejected')
+          ) AS has_active_claim
+        FROM invoices i
+        JOIN patients p ON p.id = i.patient_id
+        WHERE i.patient_id = $1
+        ORDER BY i.created_at DESC
+      `,
+      params: [patientId],
+    });
+  } catch (err) {
+    console.error("getPatientInvoices:", err);
+    return [];
+  }
+}
+
+export async function recordDownPayment(
+  payload: RecordDownPaymentPayload,
+): Promise<{ success: boolean; invoiceId?: string; error?: string }> {
+  try {
+    let invoiceId = payload.invoice_id;
+
+    await executeTransaction(async (client) => {
+      if (!invoiceId) {
+        const inv = await client.query(
+          `INSERT INTO invoices (patient_id, subtotal, discount, tax, total, status, notes, created_by)
+           VALUES ($1, 0, 0, 0, 0, 'draft', $2, $3)
+           RETURNING id`,
+          [
+            payload.patient_id,
+            payload.notes ? `Down payment — ${payload.notes}` : "Down payment",
+            payload.received_by || null,
+          ],
+        );
+        invoiceId = inv.rows[0].id as string;
+      }
+
+      await client.query(
+        `INSERT INTO payments
+           (invoice_id, patient_id, amount, method, transaction_ref, notes, received_by, status)
+         VALUES ($1, $2, $3, $4::payment_method, $5, $6, $7, 'completed')`,
+        [
+          invoiceId,
+          payload.patient_id,
+          payload.amount,
+          payload.method,
+          payload.transaction_ref || null,
+          payload.notes || null,
+          payload.received_by || null,
+        ],
+      );
+
+      await client.query(
+        `UPDATE invoices
+         SET
+           amount_paid = (
+             SELECT COALESCE(SUM(amount), 0) FROM payments
+             WHERE invoice_id = $1 AND status = 'completed'
+           ),
+           status = CASE
+             WHEN total > 0 AND (
+               SELECT COALESCE(SUM(amount), 0) FROM payments
+               WHERE invoice_id = $1 AND status = 'completed'
+             ) >= total THEN 'paid'::invoice_status
+             WHEN due_date IS NOT NULL AND due_date < CURRENT_DATE THEN 'overdue'::invoice_status
+             ELSE 'partial'::invoice_status
+           END,
+           updated_at = NOW()
+         WHERE id = $1`,
+        [invoiceId],
+      );
+    });
+
+    revalidatePath("/[locale]/finance", "page");
+    return { success: true, invoiceId };
+  } catch (err) {
+    console.error("recordDownPayment:", err);
+    return { success: false, error: "Failed to record down payment." };
+  }
 }

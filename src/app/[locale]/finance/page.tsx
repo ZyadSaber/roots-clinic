@@ -13,6 +13,8 @@ import { FinanceStatCards } from "@/components/finance/FinanceStatCards";
 import { InvoiceList } from "@/components/finance/InvoiceList";
 import { TodayBench } from "@/components/finance/TodayBench";
 import { InsuranceClaimList } from "@/components/finance/InsuranceClaimList";
+import { PurchasesTab } from "@/components/finance/PurchasesTab";
+import { DownPaymentsTab } from "@/components/finance/DownPaymentsTab";
 import { InvoiceDialog } from "@/components/finance/InvoiceDialog";
 import { PaymentDialog } from "@/components/finance/PaymentDialog";
 import { ExpenseDialog } from "@/components/finance/ExpenseDialog";
@@ -120,19 +122,6 @@ export default function FinancePage() {
     staleTime: 60_000,
   });
 
-  const invoiceFiltersWithRange: InvoiceFilters = {
-    ...invoiceFilters,
-    search: globalSearch || undefined,
-    dateFrom: dateRange?.from,
-    dateTo: dateRange?.to,
-  };
-
-  const { data: invoices, isLoading: invoicesLoading } = useQuery({
-    queryKey: ["invoices", invoiceFiltersWithRange],
-    queryFn: () => getInvoices(invoiceFiltersWithRange),
-    staleTime: 60_000,
-  });
-
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleInvoiceFilterChange = (f: Partial<InvoiceFilters>) =>
     dispatch(setInvoiceFilters(f));
@@ -190,24 +179,22 @@ export default function FinancePage() {
       />
 
       {/* Tabs */}
-      <Tabs defaultValue="insurance" dir="rtl">
+      <Tabs defaultValue="invoices">
         <TabsList>
           <TabsTrigger value="invoices">{tabsT("invoices")}</TabsTrigger>
           <TabsTrigger value="today">Today</TabsTrigger>
           <TabsTrigger value="insurance">{tabsT("insurance")}</TabsTrigger>
+          <TabsTrigger value="purchases">{tabsT("purchases")}</TabsTrigger>
+          <TabsTrigger value="down-payments">{tabsT("downPayments")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="invoices" className="mt-4">
           <InvoiceList
-            invoices={invoices ?? []}
-            filters={invoiceFiltersWithRange}
-            onFilterChange={handleInvoiceFilterChange}
             onViewDetails={openViewInvoice}
             onRecordPayment={openRecordPayment}
             onCreateClaim={openCreateClaim}
             onUpdateStatus={(inv, status) => changeInvoiceStatus({ id: inv.id, status })}
             onNewInvoice={openNewInvoice}
-            isLoading={invoicesLoading}
           />
         </TabsContent>
 
@@ -217,6 +204,14 @@ export default function FinancePage() {
 
         <TabsContent value="insurance" className="mt-4">
           <InsuranceClaimList />
+        </TabsContent>
+
+        <TabsContent value="purchases" className="mt-4">
+          <PurchasesTab />
+        </TabsContent>
+
+        <TabsContent value="down-payments" className="mt-4">
+          <DownPaymentsTab />
         </TabsContent>
       </Tabs>
 

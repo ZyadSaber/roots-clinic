@@ -285,7 +285,40 @@ export async function completeVisitWithInvoice(
         );
       }
 
-      // 9. Recalculate invoice totals from the inserted items
+      // 9. Inventory items used during visit — pull usage movements tied to this visit
+      const invMovements = await client.query<{
+        item_id: string; item_name: string; quantity: string; unit_price: string;
+      }>(
+        `SELECT m.item_id, i.name AS item_name, m.quantity, i.unit_price
+         FROM inventory_movements m
+         JOIN inventory_items i ON i.id = m.item_id
+         WHERE m.visit_id = $1 AND m.movement_type = 'usage' AND m.invoice_id IS NULL`,
+        [payload.visitId],
+      );
+
+      for (const mov of invMovements.rows) {
+        const qty = Number(mov.quantity);
+        const price = Number(mov.unit_price);
+        const total = parseFloat((qty * price).toFixed(2));
+        await client.query(
+          `INSERT INTO invoice_items
+             (invoice_id, service_name, quantity, unit_price, discount_pct, total)
+           VALUES ($1, $2, $3, $4, 0, $5)`,
+          [invoiceId, mov.item_name, qty, price, total],
+        );
+      }
+
+      // Backfill invoice_id on the movements we just consumed
+      if (invMovements.rows.length > 0) {
+        await client.query(
+          `UPDATE inventory_movements
+           SET invoice_id = $1
+           WHERE visit_id = $2 AND movement_type = 'usage' AND invoice_id IS NULL`,
+          [invoiceId, payload.visitId],
+        );
+      }
+
+      // 10. Recalculate invoice totals from the inserted items
       await client.query(
         `UPDATE invoices SET
            subtotal   = (SELECT COALESCE(SUM(total), 0) FROM invoice_items WHERE invoice_id = $1),

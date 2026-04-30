@@ -20,7 +20,7 @@
     "recordsDesc": "إدارة السجلات الطبية و تاريخ المرضى"
   },
   "Common": {
-    "date":"التاريخ",
+    "date": "التاريخ",
     "enName": "الاسم بالانجليزية",
     "id": "مسلسل",
     "arName": "الاسم بالعربية",
@@ -90,14 +90,14 @@
       "backToHome": "العودة للرئيسية"
     },
     "applicationError": {
-      "title": "حدث خطأ ما!",
-      "description": "لقد واجهنا خطأ غير متوقع. يرجى المحاولة مرة أخرى أو العودة إلى الصفحة الرئيسية.",
-      "retry": "إعادة المحاولة",
       "505": {
         "title": "505 - خطأ في الخادم",
         "description": "عذراً! حدث خطأ غير متوقع في الخادم.",
         "backToHome": "العودة إلى الصفحة الرئيسية"
-      }
+      },
+      "title": "حدث خطأ ما!",
+      "description": "لقد واجهنا خطأ غير متوقع. يرجى المحاولة مرة أخرى أو العودة إلى الصفحة الرئيسية.",
+      "retry": "إعادة المحاولة"
     },
     "goHome": "العودة للرئيسية",
     "errorDetails": "تفاصيل الخطأ",
@@ -612,7 +612,9 @@
     "tabs": {
       "invoices": "الفواتير",
       "expenses": "المصروفات",
-      "insurance": "مطالبات التأمين"
+      "insurance": "مطالبات التأمين",
+      "purchases": "المشتريات",
+      "downPayments": "الدفعات المقدمة"
     },
     "invoices": {
       "title": "الفواتير",
@@ -753,6 +755,93 @@
         "submit": "تقديم المطالبة",
         "update": "تحديث المطالبة",
         "submitting": "جاري التقديم..."
+      }
+    },
+    "purchases": {
+      "poNumber": "رقم أمر الشراء",
+      "supplier": "المورد",
+      "date": "التاريخ",
+      "status": "الحالة",
+      "total": "الإجمالي",
+      "actions": "الإجراءات",
+      "noPurchases": "لا توجد أوامر شراء بعد",
+      "noItems": "لا توجد بنود بعد",
+      "statuses": {
+        "draft": "مسودة",
+        "ordered": "مطلوب",
+        "received": "مستلم",
+        "cancelled": "ملغي"
+      },
+      "suppliers": "الموردون",
+      "newOrder": "أمر شراء جديد",
+      "markOrdered": "تحديد كمطلوب",
+      "receive": "استلام",
+      "receiving": "جاري الاستلام...",
+      "add": "إضافة",
+      "selectItem": "اختر صنفاً موجوداً (اختياري)",
+      "itemName": "اسم الصنف",
+      "qty": "الكمية",
+      "unitPrice": "سعر الوحدة",
+      "itemAdded": "تمت إضافة الصنف",
+      "orderReceived": "تم استلام أمر الشراء — تم تحديث المخزون",
+      "markedOrdered": "تم تحديد الطلب كمطلوب"
+    },
+    "insuranceProviders": {
+      "addTitle": "إضافة شركة تأمين",
+      "editTitle": "تعديل الشركة",
+      "name": "اسم الشركة",
+      "namePlaceholder": "مثال: MetLife، Bupa",
+      "nameRequired": "اسم شركة التأمين مطلوب",
+      "phone": "الهاتف",
+      "phonePlaceholder": "+20 2 xxxx xxxx",
+      "hotline": "الخط الساخن",
+      "hotlinePlaceholder": "19xxx",
+      "contractStart": "بداية العقد",
+      "contractEnd": "نهاية العقد",
+      "representative": "المندوب",
+      "representativePlaceholder": "اسم جهة الاتصال",
+      "instructions": "تعليمات التأمين",
+      "instructionsPlaceholder": "قواعد التغطية، متطلبات التقديم…",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "ملاحظات اختيارية…",
+      "add": "إضافة شركة",
+      "save": "حفظ التغييرات",
+      "saving": "جاري الحفظ…"
+    },
+    "downPayments": {
+      "hint": "ابحث عن مريض لعرض فواتيره أو تسجيل دفعة مقدمة",
+      "searchPlaceholder": "ابحث باسم المريض أو الكود…",
+      "change": "تغيير",
+      "newPayment": "دفعة مقدمة جديدة",
+      "noPatients": "لا يوجد مرضى",
+      "noInvoices": "لا توجد فواتير لهذا المريض.",
+      "noInvoicesHint": "استخدم دفعة مقدمة جديدة لتسجيل عربون.",
+      "outstandingBanner": "{count} فاتورة غير مسددة — {total} إجمالي المستحق",
+      "outstandingBannerPlural": "{count} فواتير غير مسددة — {total} إجمالي المستحق",
+      "invoice": "الفاتورة",
+      "date": "التاريخ",
+      "total": "الإجمالي",
+      "paid": "المدفوع",
+      "outstanding": "المتبقي",
+      "pay": "دفع",
+      "dialog": {
+        "newTitle": "دفعة مقدمة جديدة",
+        "payTitle": "تسجيل دفعة",
+        "depositNote": "سيتم إنشاء فاتورة مسودة تلقائياً لتتبع هذه الدفعة.",
+        "invoiceLabel": "الفاتورة",
+        "totalLabel": "الإجمالي",
+        "paidLabel": "المدفوع",
+        "outstandingLabel": "المتبقي",
+        "statusLabel": "الحالة",
+        "amount": "المبلغ (ج.م)",
+        "method": "طريقة الدفع",
+        "transactionRef": "رقم المعاملة",
+        "notes": "ملاحظات",
+        "notesPlaceholder": "سبب الدفعة المقدمة (اختياري)",
+        "submit": "تسجيل الدفعة",
+        "submitting": "جاري المعالجة...",
+        "success": "تم تسجيل الدفعة بنجاح",
+        "error": "فشل تسجيل الدفعة"
       }
     }
   }

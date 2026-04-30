@@ -12,7 +12,15 @@
       "Bash(./node_modules/.bin/tsc --noEmit)",
       "Bash(awk '{print $NF}')",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
-      "Bash(bunx tsc *)"
+      "Bash(bunx tsc *)",
+      "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(f.Finance\\),null,2\\)\\)\")",
+      "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(f.Finance.tabs,null,2\\)\\); console.log\\(JSON.stringify\\(f.Finance.insurance,null,2\\)\\)\")",
+      "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(f.Finance.payments,null,2\\)\\)\")",
+      "Bash(node -e \"const f=require\\('./messages/ar.json'\\); console.log\\(JSON.stringify\\(f.Finance,null,2\\)\\)\")",
+      "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(f.Common,null,2\\)\\)\")",
+      "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(f.Finance,null,2\\)\\)\")",
+      "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(f\\),null,2\\)\\)\")",
+      "Bash(node -e ' *)"
     ]
   }
 }
