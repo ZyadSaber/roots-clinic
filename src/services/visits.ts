@@ -88,6 +88,7 @@ export async function getVisitByAppointmentId(
         vr.procedure_notes,
         vr.prescription,
         vr.follow_up_date,
+        vr.tooth_chart,
         vr.created_at,
         s.full_name       AS doctor_name,
         sp.english_name   AS doctor_specialty_en,
@@ -124,6 +125,7 @@ export interface VisitUpdatePayload {
   procedure_notes?: string;
   prescription?: string;
   follow_up_date?: string | null;
+  tooth_chart?: import("@/types/dentalChart").AnnotationMap | null;
 }
 
 export async function updateVisitRecord(
@@ -138,8 +140,9 @@ export async function updateVisitRecord(
           procedure_done  = COALESCE($2, procedure_done),
           procedure_notes = COALESCE($3, procedure_notes),
           prescription    = COALESCE($4, prescription),
-          follow_up_date  = $5
-        WHERE id = $6
+          follow_up_date  = $5,
+          tooth_chart     = COALESCE($6::jsonb, tooth_chart)
+        WHERE id = $7
       `,
       params: [
         data.diagnosis ?? null,
@@ -147,6 +150,7 @@ export async function updateVisitRecord(
         data.procedure_notes ?? null,
         data.prescription ?? null,
         data.follow_up_date ?? null,
+        data.tooth_chart != null ? JSON.stringify(data.tooth_chart) : null,
         visitId,
       ],
     });
@@ -158,6 +162,55 @@ export async function updateVisitRecord(
       error: error instanceof Error ? error.message : "Database error",
     };
   }
+}
+
+export interface PatientVisitHistoryItem {
+  id: string;
+  appointment_id: string;
+  diagnosis: string | null;
+  procedure_type: string | null;
+  procedure_done: string | null;
+  procedure_notes: string | null;
+  prescription: string | null;
+  follow_up_date: string | null;
+  tooth_chart: import("@/types/dentalChart").AnnotationMap | null;
+  doctor_name: string;
+  doctor_specialty_en: string;
+  created_at: string;
+  radiology_count: number;
+}
+
+export async function getPatientVisitHistory(
+  patientId: string,
+  excludeVisitId: string,
+): Promise<PatientVisitHistoryItem[]> {
+  return queryMany<PatientVisitHistoryItem>({
+    sql: `
+      SELECT
+        vr.id,
+        vr.appointment_id,
+        vr.diagnosis,
+        a.procedure_type,
+        vr.procedure_done,
+        vr.procedure_notes,
+        vr.prescription,
+        vr.follow_up_date,
+        vr.tooth_chart,
+        s.full_name                        AS doctor_name,
+        COALESCE(sp.english_name, '')      AS doctor_specialty_en,
+        vr.created_at,
+        (SELECT COUNT(*)::int FROM radiology_assets ra WHERE ra.visit_id = vr.id) AS radiology_count
+      FROM visit_records vr
+      JOIN  doctors      d  ON vr.doctor_id     = d.id
+      JOIN  staff        s  ON d.staff_id        = s.id
+      LEFT JOIN specialties sp ON d.specialty_id = sp.id
+      LEFT JOIN appointments a ON vr.appointment_id = a.id
+      WHERE vr.patient_id = $1
+        AND vr.id         != $2
+      ORDER BY vr.created_at DESC
+    `,
+    params: [patientId, excludeVisitId],
+  });
 }
 
 // ── Complete visit + auto-create draft invoice ─────────────────────────────
@@ -198,14 +251,18 @@ export async function completeVisitWithInvoice(
            procedure_done  = COALESCE($2, procedure_done),
            procedure_notes = COALESCE($3, procedure_notes),
            prescription    = COALESCE($4, prescription),
-           follow_up_date  = $5
-         WHERE id = $6`,
+           follow_up_date  = $5,
+           tooth_chart     = COALESCE($6::jsonb, tooth_chart)
+         WHERE id = $7`,
         [
           payload.formData.diagnosis ?? null,
           payload.formData.procedure_done ?? null,
           payload.formData.procedure_notes ?? null,
           payload.formData.prescription ?? null,
           payload.formData.follow_up_date ?? null,
+          payload.formData.tooth_chart != null
+            ? JSON.stringify(payload.formData.tooth_chart)
+            : null,
           payload.visitId,
         ],
       );

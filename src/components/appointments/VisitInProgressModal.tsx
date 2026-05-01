@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
 import { format } from "date-fns"
@@ -8,10 +8,13 @@ import {
     Stethoscope, User, Clock, ScanLine, CheckCircle,
     Save, ImageIcon, FileText, Pill, CalendarCheck, ClipboardList, X,
     Printer, Download, Sheet, Package, Plus, ChevronDown, ChevronRight,
+    History, CalendarDays,
 } from "lucide-react"
-import { getVisitByAppointmentId, getRadiologyByVisitId, updateVisitRecord, completeVisitWithInvoice } from "@/services/visits"
+import { getVisitByAppointmentId, getRadiologyByVisitId, updateVisitRecord, completeVisitWithInvoice, getPatientVisitHistory } from "@/services/visits"
+import type { PatientVisitHistoryItem } from "@/services/visits"
 import { getInventoryItems, useInventoryItem } from "@/services/inventory"
 import type { InventoryItem } from "@/types/inventory"
+import type { AnnotationMap, Dentition, SurfaceId } from "@/types/dentalChart"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +24,9 @@ import { LoadingOverlay } from "@/components/ui/LoadingOverlay"
 import { useFormManager, useVisibility } from "@/hooks"
 import { Appointment } from "@/types/appointments"
 import { RadiologyViewer } from "@/components/radiology/RadiologyViewer"
+import { DentalChart } from "@/components/appointments/DentalChart/DentalChart"
+import { ToothDetailPanel } from "@/components/appointments/DentalChart/ToothDetailPanel"
+import { DENTITION } from "@/components/appointments/DentalChart/data"
 import { toast } from "sonner"
 
 const FORM_DEFAULTS = {
@@ -30,6 +36,8 @@ const FORM_DEFAULTS = {
     prescription: "",
     follow_up_date: "",
 }
+
+type ActiveTab = "notes" | "chart" | "history"
 
 interface VisitInProgressModalProps {
     appointment: Appointment
@@ -51,6 +59,9 @@ export function VisitInProgressModal({
     const t = useTranslations("Appointments.visitModal")
     const queryClient = useQueryClient()
 
+    // ── Tab ──
+    const [activeTab, setActiveTab] = useState<ActiveTab>("notes")
+
     // ── Form state ──
     const { formData, handleChange, setFormData } = useFormManager({ initialData: FORM_DEFAULTS })
 
@@ -62,6 +73,14 @@ export function VisitInProgressModal({
     const [usageQty, setUsageQty] = useState(1)
     const [usedItems, setUsedItems] = useState<Array<{ name: string; qty: number }>>([])
 
+    // ── History state ──
+    const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
+
+    // ── Dental chart state ──
+    const [annotations, setAnnotations] = useState<AnnotationMap>({})
+    const [selectedFdi, setSelectedFdi] = useState<number | null>(null)
+    const [dentition, setDentition] = useState<Dentition>("adult")
+
     const { data: inventoryItems = [] } = useQuery({
         queryKey: ["inventory-items"],
         queryFn: () => getInventoryItems(),
@@ -72,9 +91,6 @@ export function VisitInProgressModal({
     const { mutate: recordUsage, isPending: recordingUsage } = useMutation({
         mutationFn: async () => {
             if (!visit?.id || !selectedItemId) throw new Error("No visit or item")
-            // invoice_id is not yet known — it's created at end-visit.
-            // The movement is recorded with visit_id only; completeVisitWithInvoice
-            // backfills invoice_id and adds it as a line item when the visit ends.
             return useInventoryItem({
                 item_id: selectedItemId,
                 visit_id: visit.id,
@@ -117,7 +133,17 @@ export function VisitInProgressModal({
         refetchOnWindowFocus: true,
     })
 
-    // Seed form when visit loads (only when visit ID changes)
+    // ── Patient visit history ──
+    const { data: visitHistory = [], isLoading: historyLoading } = useQuery({
+        queryKey: ["patient-visit-history", appointment.patient_id, visit?.id],
+        queryFn: () => getPatientVisitHistory(appointment.patient_id, visit!.id),
+        enabled: !!visit?.id && open,
+        staleTime: 60_000,
+    })
+
+    const selectedHistoryVisit = visitHistory.find((v) => v.id === selectedHistoryId) ?? null
+
+    // Seed form + tooth chart when visit loads
     useEffect(() => {
         if (visit) {
             setFormData({
@@ -129,6 +155,9 @@ export function VisitInProgressModal({
                     ? visit.follow_up_date.toString().slice(0, 10)
                     : "",
             })
+            if (visit.tooth_chart && Object.keys(visit.tooth_chart).length > 0) {
+                setAnnotations(visit.tooth_chart)
+            }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visit?.id])
@@ -138,6 +167,7 @@ export function VisitInProgressModal({
         mutationFn: () => updateVisitRecord(visit!.id, {
             ...formData,
             follow_up_date: formData.follow_up_date || null,
+            tooth_chart: Object.keys(annotations).length > 0 ? annotations : null,
         }),
         onSuccess: (res) => {
             if (res.success) toast.success(t("toastSaved"))
@@ -158,6 +188,7 @@ export function VisitInProgressModal({
                 formData: {
                     ...formData,
                     follow_up_date: formData.follow_up_date || null,
+                    tooth_chart: Object.keys(annotations).length > 0 ? annotations : null,
                 },
             })
         },
@@ -179,6 +210,32 @@ export function VisitInProgressModal({
 
     const isPending = saveMutation.isPending || endMutation.isPending
 
+    // ── Dental chart helpers ──
+    const allTeeth = useMemo(() => {
+        const set = DENTITION[dentition]
+        return [...set.upper, ...set.lower]
+    }, [dentition])
+
+    const selectedTooth = useMemo(
+        () => allTeeth.find((t) => t.fdi === selectedFdi) ?? null,
+        [allTeeth, selectedFdi],
+    )
+
+    const chartStats = useMemo(() => {
+        const entries = Object.entries(annotations)
+        return {
+            flagged: entries.filter(([, a]) => a.conditions?.length && !a.conditions.includes("extraction") && !a.conditions.includes("watch")).length,
+            watch:   entries.filter(([, a]) => a.conditions?.includes("watch")).length,
+            missing: entries.filter(([, a]) => a.conditions?.includes("extraction")).length,
+            noted:   entries.filter(([, a]) => (a.note ?? "").trim().length > 0).length,
+        }
+    }, [annotations])
+
+    const handleSurfaceClick = (fdi: number, _surface: SurfaceId) => {
+        setSelectedFdi(fdi)
+    }
+
+    // ── Print / export helpers ──
     const handleImageClick = (url: string) => {
         setLightboxUrl(url)
         openLightbox()
@@ -238,7 +295,7 @@ export function VisitInProgressModal({
         const rows = buildVisitRows()
         const header = `${t("field")}\t${t("value")}\n`
         const body = rows.map(([k, v]) => `${k}\t${v}`).join("\n")
-        const blob = new Blob(["\uFEFF" + header + body], { type: "text/tab-separated-values;charset=utf-8" })
+        const blob = new Blob(["﻿" + header + body], { type: "text/tab-separated-values;charset=utf-8" })
         const url = URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
@@ -313,20 +370,73 @@ export function VisitInProgressModal({
                         </div>
                     </div>
 
-                    {/* ── Two-column body ── */}
-                    {/* flex-row: LTR → notes LEFT, radiology RIGHT | RTL → notes RIGHT, radiology LEFT */}
-                    <div className="flex flex-row flex-1 overflow-hidden min-h-0">
+                    {/* ── Tab bar ── */}
+                    <div className="flex items-center gap-1 px-6 pt-3 pb-0 border-b border-border/30 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("notes")}
+                            className={`flex items-center gap-2 px-4 py-2 text-xs font-black rounded-t-xl transition-all border border-b-0 ${
+                                activeTab === "notes"
+                                    ? "bg-background border-border/40 text-foreground -mb-px"
+                                    : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <ClipboardList className="w-3.5 h-3.5" />
+                            {t("clinicalNotes")}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("chart")}
+                            className={`flex items-center gap-2 px-4 py-2 text-xs font-black rounded-t-xl transition-all border border-b-0 ${
+                                activeTab === "chart"
+                                    ? "bg-background border-border/40 text-foreground -mb-px"
+                                    : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 2a4 4 0 0 0-4 4c0 1.5.5 2.5 1 4 .5 1.5 1 3.5 1 5.5 0 2 .5 4 2 4s1.5-2 2-4c.5-2 .5-2 1-2s.5 0 1 2c.5 2 .5 4 2 4s2-2 2-4c0-2 .5-4 1-5.5.5-1.5 1-2.5 1-4a4 4 0 0 0-4-4c-1.5 0-2 .5-3 .5s-1.5-.5-3-.5z" />
+                            </svg>
+                            Dental Chart
+                            {Object.keys(annotations).length > 0 && (
+                                <span className="text-[10px] font-black text-cyan-400 bg-cyan-400/10 rounded-full px-1.5 py-0.5">
+                                    {Object.keys(annotations).length}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("history")}
+                            className={`flex items-center gap-2 px-4 py-2 text-xs font-black rounded-t-xl transition-all border border-b-0 ${
+                                activeTab === "history"
+                                    ? "bg-background border-border/40 text-foreground -mb-px"
+                                    : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            <History className="w-3.5 h-3.5" />
+                            Previous Visits
+                            {visitHistory.length > 0 && (
+                                <span className="text-[10px] font-black text-violet-400 bg-violet-400/10 rounded-full px-1.5 py-0.5">
+                                    {visitHistory.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
 
-                        {/* ── Clinical Notes (start side) ── */}
-                        <div className="flex-1 flex flex-col overflow-hidden border-e border-border/40 min-w-0">
-                            <div className="flex items-center gap-2 px-5 py-3 border-b border-border/30 bg-secondary/20 shrink-0">
-                                <ClipboardList className="w-4 h-4 text-primary" />
-                                <span className="text-sm font-black">{t("clinicalNotes")}</span>
-                            </div>
+                    {/* ── Body ── */}
+                    {activeTab === "notes" ? (
+                        /* ── Notes tab: existing 2-column layout ── */
+                        <div className="flex flex-row flex-1 overflow-hidden min-h-0">
+                            {/* Clinical Notes */}
+                            <div className="flex-1 flex flex-col overflow-hidden border-e border-border/40 min-w-0">
+                                <div className="flex items-center gap-2 px-5 py-3 border-b border-border/30 bg-secondary/20 shrink-0">
+                                    <ClipboardList className="w-4 h-4 text-primary" />
+                                    <span className="text-sm font-black">{t("clinicalNotes")}</span>
+                                </div>
 
-                            <LoadingOverlay loading={visitLoading}>
-                                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 scrollbar-hide">
-                                    <>
+                                <div className="flex-1 min-h-0">
+                                <LoadingOverlay loading={visitLoading}>
+                                    <div className="overflow-y-auto h-full px-5 py-4 space-y-3 scrollbar-hide">
                                         <Textarea
                                             icon={FileText}
                                             label={t("diagnosis")}
@@ -383,22 +493,6 @@ export function VisitInProgressModal({
                                             onChange={handleChange}
                                             disabled={readOnly}
                                         />
-
-                                        {!readOnly && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => saveMutation.mutate()}
-                                                disabled={isPending || !visit}
-                                                className="w-full h-9 rounded-xl font-bold gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                                            >
-                                                {saveMutation.isPending
-                                                    ? <span className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                                                    : <Save className="w-3.5 h-3.5" />
-                                                }
-                                                {t("saveNotes")}
-                                            </Button>
-                                        )}
 
                                         {/* ── Items Used ── */}
                                         {!readOnly && visit?.id && (
@@ -468,73 +562,302 @@ export function VisitInProgressModal({
                                                 )}
                                             </div>
                                         )}
-
-                                    </>
+                                    </div>
+                                </LoadingOverlay>
                                 </div>
-                            </LoadingOverlay>
-                        </div>
-
-                        {/* ── Radiology Panel (end side) ── */}
-                        <div className="w-96 shrink-0 flex flex-col overflow-hidden">
-                            <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-indigo-500/5 shrink-0">
-                                <ImageIcon className="w-4 h-4 text-indigo-500" />
-                                <span className="text-sm font-black text-indigo-600">{t("radiology")}</span>
-                                {radiology.length > 0 && (
-                                    <Badge className="ms-auto bg-indigo-500/15 text-indigo-600 border-0 text-[10px] font-black">
-                                        {radiology.length}
-                                    </Badge>
-                                )}
                             </div>
 
-                            <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-hide">
-                                {radiology.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center gap-3 text-center">
-                                        <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-dashed border-indigo-500/30 flex items-center justify-center">
-                                            <ImageIcon className="w-6 h-6 text-indigo-400" />
+                            {/* Radiology Panel */}
+                            <div className="w-96 shrink-0 flex flex-col overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-indigo-500/5 shrink-0">
+                                    <ImageIcon className="w-4 h-4 text-indigo-500" />
+                                    <span className="text-sm font-black text-indigo-600">{t("radiology")}</span>
+                                    {radiology.length > 0 && (
+                                        <Badge className="ms-auto bg-indigo-500/15 text-indigo-600 border-0 text-[10px] font-black">
+                                            {radiology.length}
+                                        </Badge>
+                                    )}
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-hide">
+                                    {radiology.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center gap-3 text-center">
+                                            <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-dashed border-indigo-500/30 flex items-center justify-center">
+                                                <ImageIcon className="w-6 h-6 text-indigo-400" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-black text-muted-foreground">{t("noImages")}</p>
+                                                <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+                                                    {t("noImagesDesc")}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {radiology.map((asset) => (
+                                                <div key={asset.id} className="rounded-xl overflow-hidden border border-border/40 bg-secondary/10">
+                                                    <button
+                                                        type="button"
+                                                        className="block w-full"
+                                                        onClick={() => handleImageClick(asset.image_url)}
+                                                    >
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={asset.image_url}
+                                                            alt={asset.image_type}
+                                                            className="w-full aspect-video object-cover hover:opacity-90 transition-opacity"
+                                                        />
+                                                    </button>
+                                                    <div className="px-3 py-2 space-y-0.5">
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wide">
+                                                                {asset.image_type}
+                                                            </p>
+                                                            <p className="text-[10px] text-muted-foreground/60">
+                                                                {format(new Date(asset.taken_at), "hh:mm a")}
+                                                            </p>
+                                                        </div>
+                                                        {asset.notes && (
+                                                            <p className="text-xs text-foreground/80 leading-relaxed">{asset.notes}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ) : activeTab === "chart" ? (
+                        /* ── Dental Chart tab ── */
+                        <div className="flex flex-row flex-1 overflow-hidden min-h-0">
+                            {/* Main chart area */}
+                            <div className="flex-1 flex flex-col overflow-hidden border-e border-border/40 min-w-0">
+                                <div className="flex-1 min-h-0">
+                                <LoadingOverlay loading={visitLoading}>
+                                    <div className="overflow-y-auto h-full px-6 py-5 scrollbar-hide">
+                                        <DentalChart
+                                            dentition={dentition}
+                                            selectedFdi={selectedFdi}
+                                            annotations={annotations}
+                                            readOnly={readOnly}
+                                            onTooth={setSelectedFdi}
+                                            onSurface={handleSurfaceClick}
+                                            onDentitionChange={setDentition}
+                                        />
+
+                                        {/* Stats strip */}
+                                        <div className="flex gap-2 mt-4">
+                                            {[
+                                                { label: "Flagged", value: chartStats.flagged, color: "hsl(0 75% 65%)" },
+                                                { label: "Watch",   value: chartStats.watch,   color: "hsl(220 9% 80%)" },
+                                                { label: "Missing", value: chartStats.missing, color: "hsl(38 92% 60%)" },
+                                                { label: "Notes",   value: chartStats.noted,   color: "hsl(190 80% 60%)" },
+                                            ].map(({ label, value, color }) => (
+                                                <div key={label} className="flex-1 rounded-xl border border-border/40 bg-secondary/10 px-3 py-2">
+                                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">{label}</p>
+                                                    <p className="text-lg font-black font-mono leading-tight mt-0.5" style={{ color }}>{value}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </LoadingOverlay>
+                                </div>
+                            </div>
+
+                            {/* Tooth detail panel */}
+                            <div className="w-80 shrink-0 flex flex-col overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-cyan-500/5 shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-cyan-500" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M9 2a4 4 0 0 0-4 4c0 1.5.5 2.5 1 4 .5 1.5 1 3.5 1 5.5 0 2 .5 4 2 4s1.5-2 2-4c.5-2 .5-2 1-2s.5 0 1 2c.5 2 .5 4 2 4s2-2 2-4c0-2 .5-4 1-5.5.5-1.5 1-2.5 1-4a4 4 0 0 0-4-4c-1.5 0-2 .5-3 .5s-1.5-.5-3-.5z" />
+                                    </svg>
+                                    <span className="text-sm font-black text-cyan-600">Tooth Details</span>
+                                    {selectedFdi && (
+                                        <Badge className="ms-auto bg-cyan-500/15 text-cyan-600 border-0 text-[10px] font-black">
+                                            #{selectedFdi}
+                                        </Badge>
+                                    )}
+                                </div>
+                                <div className="flex-1 overflow-hidden flex flex-col">
+                                    <ToothDetailPanel
+                                        fdi={selectedFdi}
+                                        tooth={selectedTooth}
+                                        annotation={selectedFdi ? annotations[selectedFdi] : undefined}
+                                        readOnly={readOnly}
+                                        onUpdate={(fdi, ann) => setAnnotations((prev) => ({ ...prev, [fdi]: ann }))}
+                                        onClear={(fdi) => setAnnotations((prev) => {
+                                            const { [fdi]: _, ...rest } = prev
+                                            return rest
+                                        })}
+                                        onClose={() => setSelectedFdi(null)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : activeTab === "history" ? (
+                        /* ── Previous Visits tab ── */
+                        <div className="flex flex-row flex-1 overflow-hidden min-h-0">
+                            {/* Visit list */}
+                            <div className="w-72 shrink-0 flex flex-col overflow-hidden border-e border-border/40">
+                                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/30 bg-violet-500/5 shrink-0">
+                                    <History className="w-4 h-4 text-violet-500" />
+                                    <span className="text-sm font-black text-violet-600">Visit History</span>
+                                    {visitHistory.length > 0 && (
+                                        <Badge className="ms-auto bg-violet-500/15 text-violet-600 border-0 text-[10px] font-black">
+                                            {visitHistory.length}
+                                        </Badge>
+                                    )}
+                                </div>
+                                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-3 py-3 space-y-2">
+                                    {historyLoading ? (
+                                        <div className="flex items-center justify-center h-24">
+                                            <span className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+                                        </div>
+                                    ) : visitHistory.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+                                            <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-dashed border-violet-500/30 flex items-center justify-center">
+                                                <History className="w-5 h-5 text-violet-400" />
+                                            </div>
+                                            <p className="text-xs font-black text-muted-foreground">No previous visits</p>
+                                            <p className="text-[11px] text-muted-foreground/60">This is the patient's first visit.</p>
+                                        </div>
+                                    ) : visitHistory.map((v) => (
+                                        <button
+                                            key={v.id}
+                                            type="button"
+                                            onClick={() => setSelectedHistoryId(v.id === selectedHistoryId ? null : v.id)}
+                                            className={`w-full text-start rounded-xl border px-3 py-2.5 transition-all ${
+                                                selectedHistoryId === v.id
+                                                    ? "bg-violet-500/10 border-violet-500/40 shadow-sm"
+                                                    : "bg-secondary/10 border-border/30 hover:bg-secondary/30 hover:border-border/50"
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <span className="text-[10px] font-black text-muted-foreground flex items-center gap-1">
+                                                    <CalendarDays className="w-3 h-3" />
+                                                    {format(new Date(v.created_at), "dd MMM yyyy")}
+                                                </span>
+                                                {v.radiology_count > 0 && (
+                                                    <span className="text-[9px] font-black text-indigo-500 bg-indigo-500/10 rounded-full px-1.5 py-0.5 flex items-center gap-0.5">
+                                                        <ImageIcon className="w-2.5 h-2.5" />
+                                                        {v.radiology_count}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs font-black leading-tight truncate">
+                                                {v.procedure_type ?? "Visit"}
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                                                {v.doctor_name}
+                                                {v.doctor_specialty_en ? ` · ${v.doctor_specialty_en}` : ""}
+                                            </p>
+                                            {v.diagnosis && (
+                                                <p className="text-[11px] text-foreground/70 mt-1 line-clamp-2 leading-relaxed">
+                                                    {v.diagnosis}
+                                                </p>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Visit detail */}
+                            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+                                {selectedHistoryVisit ? (
+                                    <>
+                                        <div className="flex items-center gap-3 px-5 py-3 border-b border-border/30 bg-secondary/10 shrink-0">
+                                            <div className="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                                                <CalendarDays className="w-4 h-4 text-violet-500" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-black leading-tight">
+                                                    {selectedHistoryVisit.procedure_type ?? "Visit"}
+                                                </p>
+                                                <p className="text-[11px] text-muted-foreground">
+                                                    {format(new Date(selectedHistoryVisit.created_at), "PPP · hh:mm a")}
+                                                    {" · "}{selectedHistoryVisit.doctor_name}
+                                                </p>
+                                            </div>
+                                            {selectedHistoryVisit.radiology_count > 0 && (
+                                                <Badge className="ms-auto bg-indigo-500/15 text-indigo-600 border-0 text-[10px] font-black shrink-0">
+                                                    <ImageIcon className="w-3 h-3 me-1" />
+                                                    {selectedHistoryVisit.radiology_count} image{selectedHistoryVisit.radiology_count > 1 ? "s" : ""}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 scrollbar-hide space-y-4">
+                                            {[
+                                                { icon: FileText, label: "Diagnosis", value: selectedHistoryVisit.diagnosis },
+                                                { icon: Stethoscope, label: "Procedure Done", value: selectedHistoryVisit.procedure_done },
+                                                { icon: FileText, label: "Procedure Notes", value: selectedHistoryVisit.procedure_notes },
+                                                { icon: Pill, label: "Prescription", value: selectedHistoryVisit.prescription },
+                                                { icon: CalendarCheck, label: "Follow-up Date", value: selectedHistoryVisit.follow_up_date
+                                                    ? format(new Date(selectedHistoryVisit.follow_up_date), "PPP")
+                                                    : null },
+                                            ].map(({ icon: Icon, label, value }) => value ? (
+                                                <div key={label} className="rounded-xl border border-border/30 bg-secondary/10 px-4 py-3">
+                                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                                        <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{label}</span>
+                                                    </div>
+                                                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{value}</p>
+                                                </div>
+                                            ) : null)}
+
+                                            {selectedHistoryVisit.tooth_chart && Object.keys(selectedHistoryVisit.tooth_chart).length > 0 && (() => {
+                                                const entries = Object.entries(selectedHistoryVisit.tooth_chart)
+                                                const flagged = entries.filter(([, a]) => a.conditions?.length && !a.conditions.includes("extraction") && !a.conditions.includes("watch")).length
+                                                const missing = entries.filter(([, a]) => a.conditions?.includes("extraction")).length
+                                                const noted   = entries.filter(([, a]) => (a.note ?? "").trim().length > 0).length
+                                                return (
+                                                    <div className="rounded-xl border border-border/30 bg-secondary/10 px-4 py-3">
+                                                        <div className="flex items-center gap-1.5 mb-3">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M9 2a4 4 0 0 0-4 4c0 1.5.5 2.5 1 4 .5 1.5 1 3.5 1 5.5 0 2 .5 4 2 4s1.5-2 2-4c.5-2 .5-2 1-2s.5 0 1 2c.5 2 .5 4 2 4s2-2 2-4c0-2 .5-4 1-5.5.5-1.5 1-2.5 1-4a4 4 0 0 0-4-4c-1.5 0-2 .5-3 .5s-1.5-.5-3-.5z" />
+                                                            </svg>
+                                                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Dental Chart</span>
+                                                            <span className="ms-auto text-[10px] font-black text-cyan-500 bg-cyan-500/10 rounded-full px-2 py-0.5">
+                                                                {entries.length} teeth annotated
+                                                            </span>
+                                                        </div>
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            {[
+                                                                { label: "Flagged", value: flagged, color: "text-red-400" },
+                                                                { label: "Missing", value: missing, color: "text-amber-400" },
+                                                                { label: "Notes",   value: noted,   color: "text-cyan-400" },
+                                                            ].map(({ label, value, color }) => (
+                                                                <div key={label} className="rounded-lg border border-border/30 bg-background px-3 py-2 text-center">
+                                                                    <p className={`text-base font-black font-mono ${color}`}>{value}</p>
+                                                                    <p className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">{label}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })()}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-6">
+                                        <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-dashed border-violet-500/20 flex items-center justify-center">
+                                            <History className="w-7 h-7 text-violet-300" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-xs font-black text-muted-foreground">{t("noImages")}</p>
-                                            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-                                                {t("noImagesDesc")}
+                                            <p className="text-sm font-black text-muted-foreground">
+                                                {visitHistory.length === 0 ? "No history yet" : "Select a visit"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground/60 leading-relaxed max-w-56">
+                                                {visitHistory.length === 0
+                                                    ? "Previous visits will appear here once the patient returns."
+                                                    : "Click a visit on the left to view its full clinical details."}
                                             </p>
                                         </div>
                                     </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {radiology.map((asset) => (
-                                            <div key={asset.id} className="rounded-xl overflow-hidden border border-border/40 bg-secondary/10">
-                                                <button
-                                                    type="button"
-                                                    className="block w-full"
-                                                    onClick={() => handleImageClick(asset.image_url)}
-                                                >
-                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                    <img
-                                                        src={asset.image_url}
-                                                        alt={asset.image_type}
-                                                        className="w-full aspect-video object-cover hover:opacity-90 transition-opacity"
-                                                    />
-                                                </button>
-                                                <div className="px-3 py-2 space-y-0.5">
-                                                    <div className="flex items-center justify-between">
-                                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wide">
-                                                            {asset.image_type}
-                                                        </p>
-                                                        <p className="text-[10px] text-muted-foreground/60">
-                                                            {format(new Date(asset.taken_at), "hh:mm a")}
-                                                        </p>
-                                                    </div>
-                                                    {asset.notes && (
-                                                        <p className="text-xs text-foreground/80 leading-relaxed">{asset.notes}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
                                 )}
                             </div>
                         </div>
-                    </div>
+                    ) : null}
 
                     {/* ── Action bar ── */}
                     <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-t border-border/40 bg-secondary/10">
@@ -583,13 +906,25 @@ export function VisitInProgressModal({
                                         finally { setSendingRadiology(false) }
                                     }}
                                     disabled={isPending || sendingRadiology || !visit?.id}
-                                    className="flex-1 h-11 rounded-2xl font-black gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50"
+                                    className="h-11 rounded-2xl font-black gap-2 px-5 border-amber-500/30 text-amber-600 hover:bg-amber-500/10 hover:border-amber-500/50"
                                 >
                                     {sendingRadiology
                                         ? <span className="w-4 h-4 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
                                         : <ScanLine className="w-4 h-4" />
                                     }
                                     {sendingRadiology ? t("sendingForRadiology") : t("sendForRadiology")}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => saveMutation.mutate()}
+                                    disabled={isPending || !visit}
+                                    className="flex-1 h-11 rounded-2xl font-black gap-2 border-primary/40 text-primary hover:bg-primary/5"
+                                >
+                                    {saveMutation.isPending
+                                        ? <span className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                        : <Save className="w-4 h-4" />
+                                    }
+                                    Save
                                 </Button>
                                 <Button
                                     onClick={() => endMutation.mutate()}

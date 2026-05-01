@@ -75,6 +75,7 @@ export interface VisitRecord {
   procedure_notes: string | null;
   prescription: string | null;
   follow_up_date: string | null;
+  tooth_chart?: import("./dentalChart").AnnotationMap | null;
   doctor_name: string;
   doctor_specialty_en: string;
   doctor_specialty_ar: string;
