@@ -45,7 +45,7 @@ export const patientFormSchema = z
       .or(z.literal("")),
 
     // Insurance
-    insurance_provider: z.string().max(100).optional().or(z.literal("")),
+    insurance_company_id: z.string().uuid().optional().or(z.literal("")),
 
     insurance_number: z.string().max(100).optional().or(z.literal("")),
 
@@ -59,7 +59,7 @@ export const patientFormSchema = z
   .refine(
     (data) => {
       // If one insurance field is filled, the other must be too
-      const hasProvider = !!data.insurance_provider;
+      const hasProvider = !!data.insurance_company_id;
       const hasNumber = !!data.insurance_number;
       return hasProvider === hasNumber;
     },

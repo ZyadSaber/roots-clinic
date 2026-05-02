@@ -158,7 +158,7 @@ export function PatientsModule({ patients, stats }: PatientsModuleProps) {
             </div>
 
             {/* Patients Table */}
-            <Card className="flex-1 rounded-[2.5rem] border-none shadow-xl shadow-black/5 overflow-hidden bg-background flex flex-col min-h-0">
+            <Card className="flex-1 rounded-[2.5rem] h-full border-none shadow-xl shadow-black/5 overflow-hidden bg-background flex flex-col min-h-0">
                 <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
                     <div className="flex-1 overflow-auto scrollbar-hide">
                         <Table>
@@ -176,7 +176,12 @@ export function PatientsModule({ patients, stats }: PatientsModuleProps) {
                             </TableHeader>
                             <TableBody>
                                 {patients.map((patient) => (
-                                    <TableRow key={patient.patient_id} className="border-border/40 hover:bg-accent/20 transition-colors">
+                                    <TableRow
+                                        key={patient.patient_id}
+                                        onDoubleClick={handleOpenDetails}
+                                        className="border-border/40 hover:bg-accent/20 transition-colors"
+                                        onClick={() => dispatch(setSelectedPatient(patient.patient_id))}
+                                    >
                                         <TableCell className="px-8 py-4">
                                             <span className="font-bold text-foreground">{patient.full_name}</span>
                                         </TableCell>
@@ -211,7 +216,7 @@ export function PatientsModule({ patients, stats }: PatientsModuleProps) {
                                         <TableCell className="hidden sm:table-cell text-muted-foreground font-bold tabular-nums">
                                             {patient.last_visit ? new Date(patient.last_visit).toLocaleDateString() : '—'}
                                         </TableCell>
-                                        <TableCell className="text-end px-8" onClick={() => dispatch(setSelectedPatient(patient.patient_id))} >
+                                        <TableCell className="text-end px-8" >
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="icon" className="rounded-xl hover:bg-accent">

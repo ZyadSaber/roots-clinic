@@ -27,8 +27,9 @@ import { DatePicker } from "@/components/ui/Date"
 import { getGenderList } from "@/constants/gender"
 import Textarea from "@/components/ui/textarea"
 import { patientFormSchema } from "@/validation/patients"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createPatient, updatePatient } from "@/services/patients"
+import { getInsuranceProviders } from "@/services/finance"
 import { toast } from "sonner"
 
 interface AddPatientModuleProps {
@@ -56,6 +57,14 @@ export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: Ad
     const [step, setStep] = useState<Step>("personal")
 
     const queryClient = useQueryClient()
+
+    const { data: insuranceProviders = [] } = useQuery({
+        queryKey: ["insurance-providers"],
+        queryFn: getInsuranceProviders,
+        staleTime: 60_000,
+    })
+
+    const insuranceOptions = insuranceProviders.map((p) => ({ key: p.id, label: p.name }))
 
     const { mutate, isPending: loading } = useMutation({
         mutationFn: () =>
@@ -95,6 +104,8 @@ export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: Ad
             address: "",
             emergency_contact_name: "",
             emergency_contact_phone: "",
+            insurance_company_id: "",
+            insurance_number: "",
             notes: "",
             ...selectedPatient
         },
@@ -153,34 +164,29 @@ export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: Ad
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-3xl p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl bg-background max-h-[85vh] flex flex-col">
+            <DialogContent showCloseButton={false} className="sm:max-w-2xl p-0 overflow-hidden rounded-2xl border shadow-lg bg-background max-h-[85vh] flex flex-col">
                 <div className="relative flex flex-col flex-1 min-h-0">
-                    {/* Header with Gradient Background */}
-                    <div className="h-32 bg-linear-to-br from-primary/10 via-accent/5 to-background border-b border-border/40 relative overflow-hidden p-8">
-                        <div className="absolute top-0 inset-e-0 p-8 opacity-10">
-                            <UserPlus className="w-32 h-32 rotate-12" />
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border/40">
+                        <div>
+                            <DialogTitle className="text-lg font-bold tracking-tight">
+                                {t("registerTitle")}
+                            </DialogTitle>
+                            <DialogDescription className="text-sm text-muted-foreground">
+                                {t("registerDesc")}
+                            </DialogDescription>
                         </div>
-                        <div className="flex justify-between items-start relative z-10">
-                            <div>
-                                <DialogTitle className="text-3xl font-black tracking-tight mb-1">
-                                    {t("registerTitle")}
-                                </DialogTitle>
-                                <DialogDescription className="font-medium text-muted-foreground">
-                                    {t("registerDesc")}
-                                </DialogDescription>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleClose}
-                                className="rounded-full hover:bg-background/80 shadow-xs cursor-pointer"
-                            >
-                                <X className="w-5 h-5" />
-                            </Button>
-                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleClose}
+                            className="rounded-full cursor-pointer"
+                        >
+                            <X className="w-4 h-4" />
+                        </Button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide min-h-0">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide min-h-0">
                         {/* Step indicator */}
                         <div className="flex items-center justify-between p-1.5 bg-accent/30 rounded-2xl">
                             {steps.map((s, i) => (
@@ -336,14 +342,16 @@ export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: Ad
                                                 subtitle={t("sections.insuranceDesc")}
                                             />
                                             <div className="grid grid-cols-2 gap-6">
-                                                <Input
+                                                <SelectField
                                                     label={t("fields.insuranceProvider")}
                                                     placeholder={t("placeholders.insuranceProvider")}
-                                                    value={formData.insurance_provider}
-                                                    onChange={handleChange}
-                                                    name="insurance_provider"
-                                                    className="rounded-2xl h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20"
-                                                    error={errors.insurance_provider}
+                                                    options={insuranceOptions}
+                                                    value={formData.insurance_company_id}
+                                                    onValueChange={handleToggle("insurance_company_id")}
+                                                    name="insurance_company_id"
+                                                    showSearch
+                                                    className="rounded-2xl h-12 data-[size=default]:h-12 bg-accent/30 border-none transition-all focus:ring-2 focus:ring-primary/20"
+                                                    error={errors.insurance_company_id}
                                                 />
                                                 <Input
                                                     label={t("fields.policyNumber")}
@@ -371,13 +379,13 @@ export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: Ad
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="flex gap-4 pt-4 border-t border-border/40 bg-background relative z-10">
+                        <div className="flex gap-3 pt-4 border-t border-border/40 bg-background relative z-10">
                             {currentIndex > 0 && (
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => setStep(steps[currentIndex - 1])}
-                                    className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs border-border/50 hover:bg-accent transition-all gap-2"
+                                    className="flex-1 h-10 rounded-xl font-bold uppercase tracking-widest text-xs border-border/50 hover:bg-accent transition-all gap-2"
                                 >
                                     <ChevronLeft className="w-4 h-4" /> {t("buttons.back")}
                                 </Button>
@@ -387,7 +395,7 @@ export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: Ad
                                     type="button"
                                     disabled={currentIndex === 0 ? !formData.full_name : currentIndex === 1 ? !isContactValid : false}
                                     onClick={() => setStep(steps[currentIndex + 1])}
-                                    className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 gap-2 transition-all hover:scale-[1.02]"
+                                    className="flex-1 h-10 rounded-xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-primary/20 gap-2 transition-all hover:scale-[1.02]"
                                 >
                                     {t("buttons.next")} <ChevronRight className="w-4 h-4" />
                                 </Button>
@@ -396,7 +404,7 @@ export function PatientForm({ open, onClose, selectedPatient, onNewPatient }: Ad
                                     type="button"
                                     onClick={handleSave}
                                     disabled={!isFormSaveable || loading}
-                                    className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 gap-2 transition-all hover:scale-[1.02]"
+                                    className="flex-1 h-10 rounded-xl font-bold uppercase tracking-widest text-xs shadow-xl shadow-primary/20 gap-2 transition-all hover:scale-[1.02]"
                                 >
                                     {loading ? (
                                         <>

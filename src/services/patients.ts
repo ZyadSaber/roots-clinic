@@ -6,10 +6,11 @@ import {
   MedicalAlert,
   PatientDetails,
   PatientSummary,
-  VitalRecord,
+  VisitRecord,
 } from "@/types/patients";
 import { revalidatePath } from "next/cache";
 import { type PatientFormValues } from "@/validation/patients";
+import { getLocale } from "next-intl/server";
 
 export async function fetchAllPatients(): Promise<PatientSummary[]> {
   const sql = `SELECT * FROM patients_full`;
@@ -18,23 +19,25 @@ export async function fetchAllPatients(): Promise<PatientSummary[]> {
 
 export async function fetchPatientDetails(
   patientId: string,
-): Promise<PatientDetails | null> {
-  const [alerts, vitals, visitsRaw, assets, invoices] = await Promise.all([
-    queryMany({
-      sql: `SELECT * FROM patient_alerts WHERE patient_id = $1 ORDER BY created_at DESC`,
-      params: [patientId],
-    }),
-    queryMany({
-      sql: `SELECT * FROM patient_vitals WHERE patient_id = $1 ORDER BY recorded_at DESC`,
-      params: [patientId],
-    }),
-    queryMany({
-      sql: `
+): Promise<PatientDetails> {
+  try {
+    const locale = await getLocale()
+    const [
+      alerts,
+      visitsRaw,
+      assets,
+      invoices
+    ] = await Promise.all([
+      queryMany({
+        sql: `SELECT * FROM patient_alerts WHERE patient_id = $1 ORDER BY created_at DESC`,
+        params: [patientId],
+      }),
+      queryMany({
+        sql: `
           SELECT
             vr.*,
             s.full_name        AS doctor_name,
-            sp.english_name    AS doctor_specialty_en,
-            sp.arabic_name     AS doctor_specialty_ar,
+            ${locale === "en" ? "sp.english_name" : "sp.arabic_name"} AS doctor_specialty,
             a.procedure_type
           FROM visit_records vr
           JOIN doctors       d  ON vr.doctor_id      = d.id
@@ -44,30 +47,37 @@ export async function fetchPatientDetails(
           WHERE vr.patient_id = $1
           ORDER BY vr.created_at DESC
         `,
-      params: [patientId],
-    }),
-    queryMany({
-      sql: `SELECT * FROM radiology_assets WHERE patient_id = $1 ORDER BY taken_at DESC`,
-      params: [patientId],
-    }),
-    queryMany({
-      sql: `SELECT * FROM invoices WHERE patient_id = $1 ORDER BY created_at DESC`,
-      params: [patientId],
-    }),
-  ]);
+        params: [patientId],
+      }),
+      queryMany({
+        sql: `SELECT * FROM radiology_assets WHERE patient_id = $1 ORDER BY taken_at DESC`,
+        params: [patientId],
+      }),
+      queryMany({
+        sql: `SELECT * FROM invoices WHERE patient_id = $1 ORDER BY created_at DESC`,
+        params: [patientId],
+      }),
+    ]);
 
-  // Attach assets to visits
-  const visitsWithAssets = visitsRaw.map((v) => ({
-    ...v,
-    assets: assets.filter((a) => a.visit_id === v.id),
-  }));
+    // Attach assets to visits
+    const visitsWithAssets = visitsRaw.map((v) => ({
+      ...v,
+      assets: assets.filter((a) => a.visit_id === v.id),
+    }));
 
-  return {
-    alerts: alerts as MedicalAlert[],
-    vitals: vitals as VitalRecord[],
-    visits: visitsWithAssets,
-    invoices: invoices as InvoiceRecord[],
-  };
+    return {
+      alerts: alerts as MedicalAlert[],
+      visits: visitsWithAssets as VisitRecord[],
+      invoices: invoices as InvoiceRecord[],
+    };
+  } catch (error) {
+    console.error(error)
+    return {
+      alerts: [],
+      visits: [],
+      invoices: []
+    }
+  }
 }
 
 export async function deletePatient(patientId: string) {
@@ -83,13 +93,12 @@ export async function deletePatient(patientId: string) {
         (SELECT COUNT(*) FROM invoices        WHERE patient_id = $1) AS invoices,
         (SELECT COUNT(*) FROM visit_records   WHERE patient_id = $1) AS visits,
         (SELECT COUNT(*) FROM patient_alerts  WHERE patient_id = $1) AS alerts,
-        (SELECT COUNT(*) FROM patient_vitals  WHERE patient_id = $1) AS vitals,
         (SELECT COUNT(*) FROM payments        WHERE patient_id = $1) AS payments,
         (SELECT COUNT(*) FROM insurance_claims WHERE patient_id = $1) AS claims`,
       [patientId],
     );
 
-    const { appointments, invoices, visits, alerts, vitals, payments, claims } =
+    const { appointments, invoices, visits, alerts, payments, claims } =
       relatedData.rows[0];
 
     const hasRelatedData =
@@ -97,7 +106,6 @@ export async function deletePatient(patientId: string) {
       Number(invoices) > 0 ||
       Number(visits) > 0 ||
       Number(alerts) > 0 ||
-      Number(vitals) > 0 ||
       Number(payments) > 0 ||
       Number(claims) > 0;
 
@@ -152,7 +160,7 @@ export async function createPatient(formData: PatientFormValues) {
         address,
         emergency_contact_name,
         emergency_contact_phone,
-        insurance_provider,
+        insurance_provider_id,
         insurance_number,
         notes,
         dob
@@ -172,15 +180,15 @@ export async function createPatient(formData: PatientFormValues) {
       params: [
         formData.full_name,
         formData.phone,
-        formData.email || "",
-        formData.gender || "",
-        formData.address || "",
-        formData.emergency_contact_name || "",
-        formData.emergency_contact_phone || "",
-        formData.insurance_provider || "",
-        formData.insurance_number || "",
-        formData.notes || "",
-        formData.dob || "",
+        formData.email || null,
+        formData.gender || null,
+        formData.address || null,
+        formData.emergency_contact_name || null,
+        formData.emergency_contact_phone || null,
+        formData.insurance_company_id || null,
+        formData.insurance_number || null,
+        formData.notes || null,
+        formData.dob || null,
       ],
     });
 
@@ -214,7 +222,7 @@ export async function updatePatient(
         address                 = $5,
         emergency_contact_name  = $6,
         emergency_contact_phone = $7,
-        insurance_provider      = $8,
+        insurance_provider_id   = $8,
         insurance_number        = $9,
         notes                   = $10,
         updated_at              = NOW(),
@@ -223,16 +231,16 @@ export async function updatePatient(
       params: [
         formData.full_name,
         formData.phone,
-        formData.email || "",
-        formData.gender || "",
-        formData.address || "",
-        formData.emergency_contact_name || "",
-        formData.emergency_contact_phone || "",
-        formData.insurance_provider || "",
-        formData.insurance_number || "",
-        formData.notes || "",
+        formData.email || null,
+        formData.gender || null,
+        formData.address || null,
+        formData.emergency_contact_name || null,
+        formData.emergency_contact_phone || null,
+        formData.insurance_company_id || null,
+        formData.insurance_number || null,
+        formData.notes || null,
         patientId,
-        formData.dob || "",
+        formData.dob || null,
       ],
     });
 

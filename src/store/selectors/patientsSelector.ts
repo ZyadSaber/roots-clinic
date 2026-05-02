@@ -32,7 +32,7 @@ export const selectFilteredPatients = (patients: PatientSummary[]) =>
           return false;
 
         // Insurance filter — only active when checkbox is ON
-        if (filters.hasInsurance && !p.insurance_provider) return false;
+        if (filters.hasInsurance && !p.insurance_company_name) return false;
 
         // Critical alert filter — only active when checkbox is ON
         if (filters.hasCriticalAlert && !p.has_critical_alert) return false;
@@ -74,6 +74,6 @@ export const selectPatientStats = (patients: PatientSummary[]) =>
         (p) => new Date(p.created_at) >= startOfMonth,
       ).length,
       critical: patients.filter((p) => p.has_critical_alert).length,
-      insured: patients.filter((p) => !!p.insurance_provider).length,
+      insured: patients.filter((p) => !!p.insurance_company_name).length,
     };
   });

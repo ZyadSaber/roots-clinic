@@ -19,7 +19,8 @@ export interface PatientSummary {
   emergency_contact_phone: string;
 
   // Insurance
-  insurance_provider: string;
+  insurance_company_id?: string;
+  insurance_company_name?: string;
   insurance_number: string;
 
   // Meta
@@ -53,16 +54,6 @@ export interface MedicalAlert {
   created_at: string;
 }
 
-export interface VitalRecord {
-  id: string;
-  blood_pressure: string | null;
-  heart_rate: number | null;
-  temperature: number | null;
-  weight: number | null;
-  notes: string | null;
-  recorded_at: string;
-}
-
 export type { RadiologyAsset } from "@/types/radiology";
 import type { RadiologyAsset } from "@/types/radiology";
 
@@ -77,10 +68,9 @@ export interface VisitRecord {
   follow_up_date: string | null;
   tooth_chart?: import("./dentalChart").AnnotationMap | null;
   doctor_name: string;
-  doctor_specialty_en: string;
-  doctor_specialty_ar: string;
+  doctor_specialty: string;
   created_at: string;
-  assets?: RadiologyAsset[];
+  assets: RadiologyAsset[];
 }
 
 export interface InvoiceRecord {
@@ -95,7 +85,6 @@ export interface InvoiceRecord {
 
 export interface PatientDetails {
   alerts: MedicalAlert[];
-  vitals: VitalRecord[];
   visits: VisitRecord[];
   invoices: InvoiceRecord[];
 }

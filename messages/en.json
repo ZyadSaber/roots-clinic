@@ -269,7 +269,7 @@
       "noVisitsDesc": "This patient hasn't had any recorded visits yet.",
       "tabs": {
         "overview": "Overview",
-        "medical": "Medical & Vitals",
+        "medical": "Medical",
         "visits": "Visit History",
         "financial": "Financials"
       },

@@ -5,6 +5,7 @@ interface LoadingOverlayProps {
     loading?: boolean;
     children?: React.ReactNode;
     className?: string;
+    containerClassName?: string;
     message?: string;
 }
 
@@ -12,10 +13,11 @@ export function LoadingOverlay({
     loading,
     children,
     className,
+    containerClassName,
     message,
 }: LoadingOverlayProps) {
     return (
-        <div className="relative w-full h-full">
+        <div className={cn("relative w-full h-full flex-1 flex flex-col min-h-0", containerClassName)}>
             {children}
             {loading && (
                 <div

@@ -20,7 +20,8 @@
       "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(f.Common,null,2\\)\\)\")",
       "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(f.Finance,null,2\\)\\)\")",
       "Bash(node -e \"const f=require\\('./messages/en.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(f\\),null,2\\)\\)\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "PowerShell(Out-File *)"
     ]
   }
 }
